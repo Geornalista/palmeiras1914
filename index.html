@@ -59,16 +59,16 @@
         .tab-content {
             display: none;
             opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity 0.15s ease-in-out;
         }
         .tab-content.active {
             display: block;
             opacity: 1;
-            animation: fadeIn 0.4s ease-out;
+            animation: fadeIn 0.15s ease-out;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(2px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -115,6 +115,19 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <p class="font-semibold text-lg animate-pulse">Carregando base de dados do servidor...</p>
+        </div>
+
+        <!-- Seção de Upload de Arquivo (Fallback para ambiente de visualização/local) -->
+        <div id="upload-section" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 text-center">
+            <div class="max-w-md mx-auto">
+                <svg class="mx-auto h-12 w-12 text-palmeiras-light mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Modo de Pré-visualização</h3>
+                <p class="text-sm text-gray-500 mb-6">O carregamento automático funciona no <strong>GitHub Pages</strong>. Para testar aqui no preview, selecione o arquivo manualmente.</p>
+                <label class="cursor-pointer bg-palmeiras-dark text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light transition-colors shadow-md inline-block">
+                    Selecionar arquivo palmeiras.csv
+                    <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+                </label>
+            </div>
         </div>
 
         <!-- Mensagem de Erro -->
@@ -227,6 +240,9 @@
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
+            // Evento para caso precise usar o botão de fallback
+            document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
+            
             // Inicia o carregamento automático do arquivo do servidor
             loadServerCSVData();
 
@@ -260,32 +276,77 @@
             renderData(searchInput.value.toLowerCase());
         }
 
-        // Função para baixar o arquivo automaticamente do servidor
+        // Função para baixar o arquivo automaticamente do servidor usando fetch API
         function loadServerCSVData() {
-            // O PapaParse fará um GET request para este arquivo no seu repositório/servidor
-            Papa.parse("palmeiras.csv", {
-                download: true,
+            // Utilizamos o 'fetch' para evitar erros de XMLHttpRequest em ambientes sandboxed (como previews de editores)
+            fetch('palmeiras.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Arquivo não encontrado (Status: ${response.status})`);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    // Após receber o texto com sucesso, usamos o PapaParse para processar
+                    Papa.parse(csvText, {
+                        header: true,
+                        delimiter: ";", // O CSV usa ponto e vírgula
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            allData = results.data;
+                            
+                            // Esconde o loading e exibe a aplicação principal
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('app-content').classList.remove('hidden');
+                            
+                            // Renderiza a tabela inicial
+                            renderData('');
+                        },
+                        error: function(error) {
+                            showError("Erro ao processar o CSV: " + error.message);
+                        }
+                    });
+                })
+                .catch(error => {
+                    // SE FALHAR (Ex: rodando arquivo localmente ou no Canvas preview onde o fetch da mesma URL não é permitido)
+                    console.warn("Auto-load falhou. Mostrando fallback de upload manual.", error);
+                    document.getElementById('loading').style.display = 'none';
+                    // Mostra a tela de fallback (Upload manual)
+                    document.getElementById('upload-section').style.display = 'block';
+                });
+        }
+
+        // Função para ler o CSV via botão de upload (Fallback)
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('upload-section').style.display = 'none';
+            document.getElementById('error-message').classList.add('hidden');
+            document.getElementById('loading').style.display = 'flex';
+            
+            Papa.parse(file, {
                 header: true,
-                delimiter: ";", // O CSV usa ponto e vírgula
+                delimiter: ";",
                 skipEmptyLines: true,
                 complete: function(results) {
                     allData = results.data;
-                    
-                    // Esconde o loading e exibe a aplicação principal
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
-                    
-                    // Renderiza a tabela inicial vazia (ou com tudo, se searchTerm for vazio)
-                    renderData('');
+                    renderData(searchInput.value.toLowerCase());
                 },
                 error: function(error) {
-                    document.getElementById('loading').style.display = 'none';
-                    
-                    const errDiv = document.getElementById('error-message');
-                    errDiv.classList.remove('hidden');
-                    document.getElementById('error-text').innerText = "Erro ao ler o arquivo CSV do servidor. Certifique-se de que o arquivo 'palmeiras.csv' está na mesma pasta no GitHub Pages. Detalhe: " + error.message;
+                    showError("Erro ao ler o arquivo selecionado: " + error.message);
+                    document.getElementById('upload-section').style.display = 'block';
                 }
             });
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            const errDiv = document.getElementById('error-message');
+            errDiv.classList.remove('hidden');
+            document.getElementById('error-text').innerText = msg;
         }
 
         // Função principal de renderização
