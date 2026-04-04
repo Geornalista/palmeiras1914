@@ -165,10 +165,15 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
-                        <input type="text" id="searchInput" placeholder="Buscar adversário, ano ou campeonato..." 
+                        <input type="text" id="searchInput" placeholder="Buscar adversário, ano ou jogador..." 
                             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-shadow">
                     </div>
                 </div>
+            </div>
+
+            <!-- Aviso de Limite de Resultados (Performance) -->
+            <div id="limit-message" class="hidden text-sm text-yellow-800 mb-6 text-center font-medium bg-yellow-100 py-3 rounded-lg border border-yellow-200">
+                Muitos resultados encontrados! Mostrando apenas os 150 primeiros. Continue digitando para filtrar mais.
             </div>
 
             <!-- ABA 1: JOGOS -->
@@ -236,6 +241,8 @@
         // Variáveis Globais
         let allData = [];
         let currentTab = 'jogos';
+        let searchTimeout; // Variável para o Debounce
+        
         const searchInput = document.getElementById('searchInput');
 
         // Inicialização
@@ -246,10 +253,15 @@
             // Inicia o carregamento automático do arquivo do servidor
             loadServerCSVData();
 
-            // Evento de Busca
+            // Evento de Busca com Debounce (evita travamento ao digitar rápido)
             searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout); // Limpa o timer anterior
                 const term = e.target.value.toLowerCase();
-                renderData(term);
+                
+                // Aguarda 300ms após parar de digitar para atualizar a tela
+                searchTimeout = setTimeout(() => {
+                    renderData(term);
+                }, 300);
             });
         });
 
@@ -276,9 +288,18 @@
             renderData(searchInput.value.toLowerCase());
         }
 
+        // Preparar os dados logo ao carregar (pré-processamento da busca)
+        function preprocessData(data) {
+            return data.map(row => {
+                // Cria uma propriedade oculta com todo o texto da linha. 
+                // Isso deixa a pesquisa muito mais rápida!
+                row._searchString = Object.values(row).join(' ').toLowerCase();
+                return row;
+            });
+        }
+
         // Função para baixar o arquivo automaticamente do servidor usando fetch API
         function loadServerCSVData() {
-            // Utilizamos o 'fetch' para evitar erros de XMLHttpRequest em ambientes sandboxed (como previews de editores)
             fetch('palmeiras.csv')
                 .then(response => {
                     if (!response.ok) {
@@ -287,19 +308,17 @@
                     return response.text();
                 })
                 .then(csvText => {
-                    // Após receber o texto com sucesso, usamos o PapaParse para processar
                     Papa.parse(csvText, {
                         header: true,
-                        delimiter: ";", // O CSV usa ponto e vírgula
+                        delimiter: ";", 
                         skipEmptyLines: true,
                         complete: function(results) {
-                            allData = results.data;
+                            // Pré-processa os dados assim que chegam
+                            allData = preprocessData(results.data);
                             
-                            // Esconde o loading e exibe a aplicação principal
                             document.getElementById('loading').style.display = 'none';
                             document.getElementById('app-content').classList.remove('hidden');
                             
-                            // Renderiza a tabela inicial
                             renderData('');
                         },
                         error: function(error) {
@@ -308,10 +327,8 @@
                     });
                 })
                 .catch(error => {
-                    // SE FALHAR (Ex: rodando arquivo localmente ou no Canvas preview onde o fetch da mesma URL não é permitido)
                     console.warn("Auto-load falhou. Mostrando fallback de upload manual.", error);
                     document.getElementById('loading').style.display = 'none';
-                    // Mostra a tela de fallback (Upload manual)
                     document.getElementById('upload-section').style.display = 'block';
                 });
         }
@@ -330,9 +347,12 @@
                 delimiter: ";",
                 skipEmptyLines: true,
                 complete: function(results) {
-                    allData = results.data;
+                    // Pré-processa os dados assim que chegam
+                    allData = preprocessData(results.data);
+                    
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
+                    
                     renderData(searchInput.value.toLowerCase());
                 },
                 error: function(error) {
@@ -353,16 +373,26 @@
         function renderData(searchTerm) {
             if (allData.length === 0) return;
 
-            // Filtrar Dados
-            const filteredData = allData.filter(row => {
-                const values = Object.values(row).join(' ').toLowerCase();
-                return values.includes(searchTerm);
-            });
+            // Filtragem Ultrarrápida usando o pré-processamento
+            const filteredData = allData.filter(row => row._searchString.includes(searchTerm));
 
+            // LIMITE DE EXIBIÇÃO: Impede o navegador de travar protegendo o DOM
+            const limitMessage = document.getElementById('limit-message');
+            let dataToRender = filteredData;
+            
+            if (filteredData.length > 150) {
+                // Pega apenas os primeiros 150 itens e mostra a mensagem
+                dataToRender = filteredData.slice(0, 150);
+                limitMessage.classList.remove('hidden');
+            } else {
+                limitMessage.classList.add('hidden');
+            }
+
+            // Manda renderizar apenas o lote limitado
             if (currentTab === 'jogos') {
-                renderJogos(filteredData);
+                renderJogos(dataToRender);
             } else if (currentTab === 'escalacoes') {
-                renderEscalacoes(filteredData);
+                renderEscalacoes(dataToRender);
             }
         }
 
@@ -392,11 +422,10 @@
                 mobileContainer.classList.remove('hidden');
             }
 
-            // Para melhor performance e não travar o navegador com milhares de nós, vamos usar um fragmento
             const desktopFragment = document.createDocumentFragment();
             const mobileFragment = document.createDocumentFragment();
 
-            data.forEach((row, index) => {
+            data.forEach((row) => {
                 const dataJogo = row['Data'] || '';
                 const camp = row['Campeonato'] || '';
                 const est = row['Estadio'] || '';
@@ -436,7 +465,6 @@
                 // Mobile Card
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative overflow-hidden';
-                // Linha lateral verde para destaque
                 card.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-palmeiras-light"></div>
                     <div class="flex justify-between items-center mb-2 text-xs text-gray-500 pl-2">
@@ -483,9 +511,8 @@
                 header.parentElement.parentElement.classList.remove('hidden');
             }
 
-            // Identificar colunas do CSV para o cabeçalho (Data, Adversário e Jogadores)
-            // Pegamos as chaves do primeiro objeto e excluímos as que não importam na visualização direta
-            const excludeKeys = ['Campeonato', 'Estadio', 'GOLS_H', 'GOLS_A', 'LINK', 'Mandante', 'Visitante'];
+            // Exclui colunas não necessárias e a propriedade gerada _searchString
+            const excludeKeys = ['Campeonato', 'Estadio', 'GOLS_H', 'GOLS_A', 'LINK', 'Mandante', 'Visitante', '_searchString'];
             const keys = Object.keys(data[0]);
             
             // Montar Cabeçalho
@@ -493,10 +520,8 @@
                 <th scope="col" class="sticky-col px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Partida (Adversário)</th>
             `;
             
-            // Adiciona as colunas de jogadores/goleiro (dinamicamente)
             keys.forEach(key => {
                 if (!excludeKeys.includes(key) && key !== 'Data') {
-                    // Tratar visualmente o cabeçalho Jog1, Jog2...
                     let label = key;
                     if(key.toLowerCase() === 'goleiro') label = 'Goleiro';
                     else if(key.toLowerCase().startsWith('jog')) label = 'Linha ' + key.replace(/\D/g, '');
@@ -513,7 +538,6 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
 
-                // Coluna 1 fixada: Data + Adversário
                 const dataJogo = row['Data'] || '';
                 const adversario = isPalmeiras(row['Mandante']) ? row['Visitante'] : row['Mandante'];
                 
@@ -524,11 +548,9 @@
                     </td>
                 `;
 
-                // Células de jogadores
                 keys.forEach(key => {
                     if (!excludeKeys.includes(key) && key !== 'Data') {
                         const player = row[key] || '-';
-                        // Destaca se tem jogador preenchido
                         const textColor = player !== '-' ? 'text-gray-800' : 'text-gray-300';
                         tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
                     }
