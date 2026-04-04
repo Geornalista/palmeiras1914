@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico e Escalações - Palmeiras</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PapaParse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- Tailwind Config para cores do Palmeiras -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        palmeiras: {
+                            dark: '#006437',  /* Verde Escuro Oficial */
+                            light: '#048446', /* Verde Mais Claro */
+                            gold: '#cf982a',  /* Dourado */
+                            bg: '#f0fdf4'     /* Fundo esverdeado bem claro */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilização da Barra de Rolagem */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8; 
+        }
+
+        /* Efeitos de Transição para as Abas */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Congelar primeira coluna da tabela de escalações no scroll horizontal */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 10;
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Cabeçalho -->
+    <header class="bg-palmeiras-dark text-white shadow-lg relative overflow-hidden">
+        <!-- Padrão de fundo opcional (simulando marca d'água) -->
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <!-- Escudo Simulado (Pode substituir pela imagem real) -->
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-palmeiras-dark font-bold text-xl border-2 border-palmeiras-gold shadow-md">
+                        P
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-white uppercase">Sociedade Esportiva Palmeiras</h1>
+                        <p class="text-palmeiras-gold font-medium text-sm">Histórico de Partidas e Escalações</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- Estado de Carregamento Inicial -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20 text-palmeiras-dark">
+            <svg class="animate-spin h-10 w-10 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="font-semibold text-lg animate-pulse">Carregando base de dados do servidor...</p>
+        </div>
+
+        <!-- Mensagem de Erro -->
+        <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700" id="error-text">Não foi possível carregar o arquivo CSV.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTEÚDO DA APLICAÇÃO (Oculto até o upload automático finalizar) -->
+        <div id="app-content" class="hidden">
+            <!-- Controles e Abas -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
+                    
+                    <!-- Navegação de Abas -->
+                    <nav class="flex space-x-1 sm:space-x-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar" aria-label="Tabs">
+                        <button onclick="changeTab('jogos')" id="tab-jogos" class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark text-white shadow-md transition-all">
+                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Partidas
+                        </button>
+                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes" class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 hover:text-palmeiras-dark hover:bg-palmeiras-bg transition-all">
+                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Escalações
+                        </button>
+                    </nav>
+
+                    <!-- Filtro / Busca -->
+                    <div class="w-full lg:w-96 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Buscar adversário, ano ou campeonato..." 
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-shadow">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 1: JOGOS -->
+            <div id="content-jogos" class="tab-content active">
+                
+                <!-- Visão Mobile (Cards) -->
+                <div id="mobile-jogos-container" class="grid grid-cols-1 gap-4 md:hidden">
+                    <!-- Preenchido via JS -->
+                </div>
+
+                <!-- Visão Desktop/Tablet (Tabela) -->
+                <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Campeonato</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Mandante</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Placar</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Visitante</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Detalhes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="desktop-jogos-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Sem resultados -->
+                <div id="no-results-jogos" class="hidden py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm mt-4">
+                    <p class="text-lg">Nenhuma partida encontrada para a busca.</p>
+                </div>
+            </div>
+
+            <!-- ABA 2: ESCALAÇÕES -->
+            <div id="content-escalacoes" class="tab-content">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
+                    <!-- Tabela de escalações precisa sempre rolar horizontalmente devido a muitas colunas -->
+                    <div class="overflow-x-auto max-h-[70vh]">
+                        <table class="min-w-full divide-y divide-gray-200 relative">
+                            <thead class="bg-gray-50 sticky top-0 z-20">
+                                <tr id="escalacoes-header">
+                                    <!-- Preenchido via JS -->
+                                </tr>
+                            </thead>
+                            <tbody id="escalacoes-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Sem resultados -->
+                <div id="no-results-escalacoes" class="hidden py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm mt-4">
+                    <p class="text-lg">Nenhuma escalação encontrada para a busca.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Variáveis Globais
+        let allData = [];
+        let currentTab = 'jogos';
+        const searchInput = document.getElementById('searchInput');
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicia o carregamento automático do arquivo do servidor
+            loadServerCSVData();
+
+            // Evento de Busca
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                renderData(term);
+            });
+        });
+
+        // Alternar Abas
+        function changeTab(tabName) {
+            currentTab = tabName;
+            
+            // Atualizar Botões
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.id === `tab-${tabName}`) {
+                    btn.className = 'tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark text-white shadow-md transition-all';
+                } else {
+                    btn.className = 'tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 hover:text-palmeiras-dark hover:bg-palmeiras-bg transition-all';
+                }
+            });
+
+            // Atualizar Conteúdo
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`content-${tabName}`).classList.add('active');
+
+            // Renderizar novamente de acordo com o termo da busca atual
+            renderData(searchInput.value.toLowerCase());
+        }
+
+        // Função para baixar o arquivo automaticamente do servidor
+        function loadServerCSVData() {
+            // O PapaParse fará um GET request para este arquivo no seu repositório/servidor
+            Papa.parse("palmeiras.csv", {
+                download: true,
+                header: true,
+                delimiter: ";", // O CSV usa ponto e vírgula
+                skipEmptyLines: true,
+                complete: function(results) {
+                    allData = results.data;
+                    
+                    // Esconde o loading e exibe a aplicação principal
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('app-content').classList.remove('hidden');
+                    
+                    // Renderiza a tabela inicial vazia (ou com tudo, se searchTerm for vazio)
+                    renderData('');
+                },
+                error: function(error) {
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    const errDiv = document.getElementById('error-message');
+                    errDiv.classList.remove('hidden');
+                    document.getElementById('error-text').innerText = "Erro ao ler o arquivo CSV do servidor. Certifique-se de que o arquivo 'palmeiras.csv' está na mesma pasta no GitHub Pages. Detalhe: " + error.message;
+                }
+            });
+        }
+
+        // Função principal de renderização
+        function renderData(searchTerm) {
+            if (allData.length === 0) return;
+
+            // Filtrar Dados
+            const filteredData = allData.filter(row => {
+                const values = Object.values(row).join(' ').toLowerCase();
+                return values.includes(searchTerm);
+            });
+
+            if (currentTab === 'jogos') {
+                renderJogos(filteredData);
+            } else if (currentTab === 'escalacoes') {
+                renderEscalacoes(filteredData);
+            }
+        }
+
+        // Verifica se é o Palmeiras para destacar
+        function isPalmeiras(teamName) {
+            if(!teamName) return false;
+            return teamName.toLowerCase().includes('palmeiras') || teamName.toLowerCase().includes('palestra');
+        }
+
+        // Renderizar Aba "Jogos"
+        function renderJogos(data) {
+            const desktopBody = document.getElementById('desktop-jogos-body');
+            const mobileContainer = document.getElementById('mobile-jogos-container');
+            const noResults = document.getElementById('no-results-jogos');
+            
+            desktopBody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+
+            if (data.length === 0) {
+                noResults.classList.remove('hidden');
+                desktopBody.parentElement.parentElement.classList.add('hidden');
+                mobileContainer.classList.add('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+                desktopBody.parentElement.parentElement.classList.remove('hidden');
+                mobileContainer.classList.remove('hidden');
+            }
+
+            // Para melhor performance e não travar o navegador com milhares de nós, vamos usar um fragmento
+            const desktopFragment = document.createDocumentFragment();
+            const mobileFragment = document.createDocumentFragment();
+
+            data.forEach((row, index) => {
+                const dataJogo = row['Data'] || '';
+                const camp = row['Campeonato'] || '';
+                const est = row['Estadio'] || '';
+                const mandante = row['Mandante'] || '';
+                const visitante = row['Visitante'] || '';
+                const golM = row['GOLS_H'] !== undefined ? row['GOLS_H'] : '-';
+                const golV = row['GOLS_A'] !== undefined ? row['GOLS_A'] : '-';
+                const link = row['LINK'] || '';
+
+                const isMandanteVerdao = isPalmeiras(mandante);
+                const isVisitanteVerdao = isPalmeiras(visitante);
+
+                const mandanteClass = isMandanteVerdao ? 'font-bold text-palmeiras-dark' : 'text-gray-700';
+                const visitanteClass = isVisitanteVerdao ? 'font-bold text-palmeiras-dark' : 'text-gray-700';
+
+                // Desktop Row
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${dataJogo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${camp}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right ${mandanteClass}">${mandante}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-800">
+                            ${golM} <span class="mx-2 text-gray-400 font-normal">x</span> ${golV}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${visitanteClass}">${visitante}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light hover:text-palmeiras-dark transition-colors inline-flex items-center gap-1" title="Ver Detalhes">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>` : '-'}
+                    </td>
+                `;
+                desktopFragment.appendChild(tr);
+
+                // Mobile Card
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative overflow-hidden';
+                // Linha lateral verde para destaque
+                card.innerHTML = `
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-palmeiras-light"></div>
+                    <div class="flex justify-between items-center mb-2 text-xs text-gray-500 pl-2">
+                        <span><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dataJogo}</span>
+                        <span class="truncate ml-2 max-w-[120px] font-medium text-palmeiras-dark">${camp}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 pl-2">
+                        <div class="flex-1 text-right pr-2 text-sm ${mandanteClass} truncate" title="${mandante}">${mandante}</div>
+                        <div class="px-3 py-1 bg-gray-100 rounded-md font-bold text-gray-800 text-sm shadow-inner shrink-0">
+                            ${golM} <span class="text-gray-400 font-normal mx-1">x</span> ${golV}
+                        </div>
+                        <div class="flex-1 text-left pl-2 text-sm ${visitanteClass} truncate" title="${visitante}">${visitante}</div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-400 pl-2 border-t border-gray-100 pt-2">
+                        <span class="truncate flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            ${est}
+                        </span>
+                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light font-semibold ml-2">Ver Jogo &rarr;</a>` : ''}
+                    </div>
+                `;
+                mobileFragment.appendChild(card);
+            });
+
+            desktopBody.appendChild(desktopFragment);
+            mobileContainer.appendChild(mobileFragment);
+        }
+
+        // Renderizar Aba "Escalações"
+        function renderEscalacoes(data) {
+            const header = document.getElementById('escalacoes-header');
+            const body = document.getElementById('escalacoes-body');
+            const noResults = document.getElementById('no-results-escalacoes');
+
+            header.innerHTML = '';
+            body.innerHTML = '';
+
+            if (data.length === 0) {
+                noResults.classList.remove('hidden');
+                header.parentElement.parentElement.classList.add('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+                header.parentElement.parentElement.classList.remove('hidden');
+            }
+
+            // Identificar colunas do CSV para o cabeçalho (Data, Adversário e Jogadores)
+            // Pegamos as chaves do primeiro objeto e excluímos as que não importam na visualização direta
+            const excludeKeys = ['Campeonato', 'Estadio', 'GOLS_H', 'GOLS_A', 'LINK', 'Mandante', 'Visitante'];
+            const keys = Object.keys(data[0]);
+            
+            // Montar Cabeçalho
+            let theadHTML = `
+                <th scope="col" class="sticky-col px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Partida (Adversário)</th>
+            `;
+            
+            // Adiciona as colunas de jogadores/goleiro (dinamicamente)
+            keys.forEach(key => {
+                if (!excludeKeys.includes(key) && key !== 'Data') {
+                    // Tratar visualmente o cabeçalho Jog1, Jog2...
+                    let label = key;
+                    if(key.toLowerCase() === 'goleiro') label = 'Goleiro';
+                    else if(key.toLowerCase().startsWith('jog')) label = 'Linha ' + key.replace(/\D/g, '');
+
+                    theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">${label}</th>`;
+                }
+            });
+            header.innerHTML = theadHTML;
+
+            // Montar Corpo
+            const fragment = document.createDocumentFragment();
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
+
+                // Coluna 1 fixada: Data + Adversário
+                const dataJogo = row['Data'] || '';
+                const adversario = isPalmeiras(row['Mandante']) ? row['Visitante'] : row['Mandante'];
+                
+                let tdHTML = `
+                    <td class="sticky-col px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200">
+                        <div class="text-xs text-gray-500">${dataJogo}</div>
+                        <div class="text-palmeiras-dark">${adversario}</div>
+                    </td>
+                `;
+
+                // Células de jogadores
+                keys.forEach(key => {
+                    if (!excludeKeys.includes(key) && key !== 'Data') {
+                        const player = row[key] || '-';
+                        // Destaca se tem jogador preenchido
+                        const textColor = player !== '-' ? 'text-gray-800' : 'text-gray-300';
+                        tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
+                    }
+                });
+
+                tr.innerHTML = tdHTML;
+                fragment.appendChild(tr);
+            });
+
+            body.appendChild(fragment);
+        }
+    </script>
+</body>
+</html>
