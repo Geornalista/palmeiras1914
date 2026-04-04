@@ -640,30 +640,71 @@
                 header.parentElement.parentElement.classList.remove('hidden');
             }
 
-            // Exclui colunas não necessárias e a propriedade gerada _searchString
-            const excludeKeys = ['Campeonato', 'Estadio', 'GOLS_H', 'GOLS_A', 'LINK', 'Mandante', 'Visitante', '_searchString'];
-            const keys = Object.keys(data[0]);
+            let maxFieldPlayers = 0;
             
-            // Montar Cabeçalho
+            // Passo 1: Processa e sanitiza as linhas para separar os jogadores do técnico
+            const processedRows = data.map(row => {
+                // Pega todas as chaves dinâmicas que começam com 'jog' (ignorando maiúsculas/minúsculas)
+                // e garante que a numeração vai da ordem certa (Jog1, Jog2, etc)
+                const jogKeys = Object.keys(row)
+                    .filter(k => k.toLowerCase().startsWith('jog'))
+                    .sort((a, b) => {
+                        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                        return numA - numB;
+                    });
+                
+                const players = [];
+                // Empilha todos os preenchidos, pulando células vazias (para não gerar colunas sem nada no meio da tabela)
+                jogKeys.forEach(k => {
+                    const val = row[k] ? row[k].trim() : '';
+                    if (val && val !== '-') {
+                        players.push(val);
+                    }
+                });
+                
+                let tecnico = '-';
+                // O ÚLTIMO nome preenchido dessa lista de jogadores é o técnico (como solicitado)
+                if (players.length > 0) {
+                    tecnico = players.pop(); 
+                }
+                
+                // Grava o tamanho máximo para sabermos até qual número vai a coluna 'Jogador X'
+                maxFieldPlayers = Math.max(maxFieldPlayers, players.length);
+                
+                // Tenta achar a chave exata para o goleiro independente de como foi digitada no CSV
+                const goleiroKey = Object.keys(row).find(k => k.toLowerCase() === 'goleiro');
+                const goleiroNome = goleiroKey && row[goleiroKey] ? row[goleiroKey].trim() : '-';
+
+                return {
+                    original: row,
+                    players: players,
+                    tecnico: tecnico,
+                    goleiro: goleiroNome
+                };
+            });
+
+            // Passo 2: Montar Cabeçalho Limpo e Dinâmico
             let theadHTML = `
-                <th scope="col" class="sticky-col px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Partida (Adversário)</th>
+                <th scope="col" class="sticky-col px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider z-30">Partida (Adversário)</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Goleiro</th>
             `;
             
-            keys.forEach(key => {
-                if (!excludeKeys.includes(key) && key !== 'Data') {
-                    let label = key;
-                    if(key.toLowerCase() === 'goleiro') label = 'Goleiro';
-                    else if(key.toLowerCase().startsWith('jog')) label = 'Linha ' + key.replace(/\D/g, '');
-
-                    theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">${label}</th>`;
-                }
-            });
+            // Cria os cabeçalhos de linha
+            for (let i = 1; i <= maxFieldPlayers; i++) {
+                theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Jogador ${i}</th>`;
+            }
+            
+            // Coluna do Técnico no final
+            theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-palmeiras-dark uppercase tracking-wider whitespace-nowrap bg-palmeiras-light/10">Técnico</th>`;
+            
             header.innerHTML = theadHTML;
 
-            // Montar Corpo
+            // Passo 3: Montar Corpo da Tabela
             const fragment = document.createDocumentFragment();
 
-            data.forEach(row => {
+            processedRows.forEach(pRow => {
+                const row = pRow.original;
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
 
@@ -675,15 +716,19 @@
                         <div class="text-xs text-gray-500">${dataJogo}</div>
                         <div class="text-palmeiras-dark">${adversario}</div>
                     </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800">${pRow.goleiro}</td>
                 `;
 
-                keys.forEach(key => {
-                    if (!excludeKeys.includes(key) && key !== 'Data') {
-                        const player = row[key] || '-';
-                        const textColor = player !== '-' ? 'text-gray-800' : 'text-gray-300';
-                        tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
-                    }
-                });
+                // Preenche as colunas até o máximo necessário
+                for (let i = 0; i < maxFieldPlayers; i++) {
+                    const player = pRow.players[i] || '-';
+                    const textColor = player !== '-' ? 'text-gray-800' : 'text-gray-300';
+                    tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
+                }
+
+                // E por fim a célula do Técnico com um leve fundo para destacar
+                const tecColor = pRow.tecnico !== '-' ? 'text-palmeiras-dark font-semibold' : 'text-gray-300';
+                tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${tecColor} bg-palmeiras-light/5">${pRow.tecnico}</td>`;
 
                 tr.innerHTML = tdHTML;
                 fragment.appendChild(tr);
