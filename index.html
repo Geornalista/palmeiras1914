@@ -165,15 +165,67 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
-                        <input type="text" id="searchInput" placeholder="Buscar adversário, ano ou jogador..." 
+                        <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
                             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-shadow">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAINEL DE ESTATÍSTICAS CONSOLIDADAS -->
+            <div id="stats-container" class="hidden mb-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-palmeiras-bg px-5 py-3 border-b border-palmeiras-light/30 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-palmeiras-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <h3 class="text-sm font-bold text-palmeiras-dark uppercase tracking-wide">Aproveitamento Consolidado da Busca</h3>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 text-center">
+                        <!-- Jogos -->
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Jogos</p>
+                            <p id="stat-jogos" class="text-xl font-black text-gray-800">-</p>
+                        </div>
+                        <!-- Vitorias -->
+                        <div class="bg-green-50 rounded-lg p-3 border border-green-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-green-700 uppercase font-bold tracking-wider mb-1">Vitórias</p>
+                            <p id="stat-vitorias" class="text-xl font-black text-green-700">-</p>
+                        </div>
+                        <!-- Empates -->
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-600 uppercase font-bold tracking-wider mb-1">Empates</p>
+                            <p id="stat-empates" class="text-xl font-black text-gray-700">-</p>
+                        </div>
+                        <!-- Derrotas -->
+                        <div class="bg-red-50 rounded-lg p-3 border border-red-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-red-700 uppercase font-bold tracking-wider mb-1">Derrotas</p>
+                            <p id="stat-derrotas" class="text-xl font-black text-red-600">-</p>
+                        </div>
+                        <!-- Gols Pró -->
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Gols Pró</p>
+                            <p id="stat-gols-pro" class="text-xl font-black text-gray-800">-</p>
+                        </div>
+                        <!-- Gols Sofridos -->
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Gols Sofr.</p>
+                            <p id="stat-gols-sofridos" class="text-xl font-black text-gray-800">-</p>
+                        </div>
+                        <!-- Saldo -->
+                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Saldo</p>
+                            <p id="stat-saldo" class="text-xl font-black text-gray-800">-</p>
+                        </div>
+                        <!-- Aproveitamento -->
+                        <div class="bg-palmeiras-dark rounded-lg p-3 border border-palmeiras-dark flex flex-col justify-center shadow-inner">
+                            <p class="text-[10px] text-palmeiras-gold uppercase font-bold tracking-wider mb-1">Aprov.</p>
+                            <p id="stat-aproveitamento" class="text-xl font-black text-white">-</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Aviso de Limite de Resultados (Performance) -->
             <div id="limit-message" class="hidden text-sm text-yellow-800 mb-6 text-center font-medium bg-yellow-100 py-3 rounded-lg border border-yellow-200">
-                Muitos resultados encontrados! Mostrando apenas os 150 primeiros. Continue digitando para filtrar mais.
+                Muitos resultados encontrados! Mostrando os 150 primeiros na tabela. Continue digitando para refinar.
             </div>
 
             <!-- ABA 1: JOGOS -->
@@ -369,12 +421,89 @@
             document.getElementById('error-text').innerText = msg;
         }
 
+        // Calcula as Estatísticas de Aproveitamento baseadas nos dados filtrados
+        function calcularEstatisticas(data) {
+            const statsContainer = document.getElementById('stats-container');
+            
+            if (data.length === 0) {
+                statsContainer.classList.add('hidden');
+                return;
+            }
+
+            let jogosRealizados = 0;
+            let vitorias = 0;
+            let empates = 0;
+            let derrotas = 0;
+            let golsPro = 0;
+            let golsSofridos = 0;
+
+            data.forEach(row => {
+                const isMandante = isPalmeiras(row['Mandante']);
+                const isVisitante = isPalmeiras(row['Visitante']);
+                
+                // Ignora se não for jogo do Palmeiras por algum motivo na base
+                if (!isMandante && !isVisitante) return;
+
+                // Tenta transformar em número. Jogos que ainda não aconteceram ou W.O sem placar podem falhar aqui
+                const golH = parseInt(row['GOLS_H']);
+                const golA = parseInt(row['GOLS_A']);
+
+                // Só processa se houver resultado válido (número)
+                if (!isNaN(golH) && !isNaN(golA)) {
+                    jogosRealizados++;
+                    
+                    if (isMandante) {
+                        golsPro += golH;
+                        golsSofridos += golA;
+                        if (golH > golA) vitorias++;
+                        else if (golH === golA) empates++;
+                        else derrotas++;
+                    } else { // é visitante
+                        golsPro += golA;
+                        golsSofridos += golH;
+                        if (golA > golH) vitorias++;
+                        else if (golA === golH) empates++;
+                        else derrotas++;
+                    }
+                }
+            });
+
+            // Mostra o painel
+            statsContainer.classList.remove('hidden');
+
+            const saldo = golsPro - golsSofridos;
+            // Cálculo do aproveitamento: (pontos ganhos / pontos possíveis) * 100
+            // Cada vitória vale 3, empate vale 1. Pontos possíveis = jogos * 3
+            const aproveitamento = jogosRealizados > 0 ? (((vitorias * 3) + empates) / (jogosRealizados * 3)) * 100 : 0;
+
+            // Renderiza os valores na interface
+            document.getElementById('stat-jogos').innerText = jogosRealizados;
+            document.getElementById('stat-vitorias').innerText = vitorias;
+            document.getElementById('stat-empates').innerText = empates;
+            document.getElementById('stat-derrotas').innerText = derrotas;
+            document.getElementById('stat-gols-pro').innerText = golsPro;
+            document.getElementById('stat-gols-sofridos').innerText = golsSofridos;
+            document.getElementById('stat-saldo').innerText = saldo > 0 ? '+' + saldo : saldo;
+            document.getElementById('stat-aproveitamento').innerText = aproveitamento.toFixed(2).replace('.', ',') + '%';
+        }
+
         // Função principal de renderização
         function renderData(searchTerm) {
             if (allData.length === 0) return;
 
-            // Filtragem Ultrarrápida usando o pré-processamento
-            const filteredData = allData.filter(row => row._searchString.includes(searchTerm));
+            // Divide os termos por vírgula, remove espaços vazios nas extremidades e ignora termos em branco
+            const searchTerms = searchTerm.split(',').map(t => t.trim()).filter(t => t !== '');
+
+            // Filtragem Ultrarrápida com múltiplos termos
+            const filteredData = allData.filter(row => {
+                if (searchTerms.length === 0) return true; // Se a busca estiver vazia, retorna tudo
+                
+                // A linha só passa no filtro se TODOS os termos digitados estiverem contidos nela
+                return searchTerms.every(term => row._searchString.includes(term));
+            });
+
+            // ATUALIZA O PAINEL DE ESTATÍSTICAS COM TODOS OS RESULTADOS (antes de cortar)
+            calcularEstatisticas(filteredData);
 
             // LIMITE DE EXIBIÇÃO: Impede o navegador de travar protegendo o DOM
             const limitMessage = document.getElementById('limit-message');
@@ -388,7 +517,7 @@
                 limitMessage.classList.add('hidden');
             }
 
-            // Manda renderizar apenas o lote limitado
+            // Manda renderizar apenas o lote limitado na tabela
             if (currentTab === 'jogos') {
                 renderJogos(dataToRender);
             } else if (currentTab === 'escalacoes') {
