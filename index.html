@@ -343,6 +343,13 @@
         
         const searchInput = document.getElementById('searchInput');
 
+        // Função utilitária para remover acentos de strings
+        function removeAccents(str) {
+            if (!str) return '';
+            // normalize('NFD') separa letras e acentos, e o replace remove os caracteres de acentuação (diacríticos)
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
             loadServerCSVData();
@@ -377,7 +384,9 @@
 
         function preprocessData(data) {
             return data.map(row => {
-                row._searchString = Object.values(row).join(' ').toLowerCase();
+                // Junta todo o conteúdo da linha em uma string, joga pra minúsculo e tira os acentos
+                const combinedStr = Object.values(row).join(' ').toLowerCase();
+                row._searchString = removeAccents(combinedStr);
                 return row;
             });
         }
@@ -483,9 +492,13 @@
         function renderData(searchTerm) {
             if (allData.length === 0) return;
 
-            const searchTerms = searchTerm.split(',').map(t => t.trim()).filter(t => t !== '');
+            // Remove acentos do termo que o usuário acabou de digitar
+            const normalizedSearchTerm = removeAccents(searchTerm);
+
+            const searchTerms = normalizedSearchTerm.split(',').map(t => t.trim()).filter(t => t !== '');
             const filteredData = allData.filter(row => {
                 if (searchTerms.length === 0) return true;
+                // Compara os termos digitados sem acento com a string pré-processada (também sem acento) do CSV
                 return searchTerms.every(term => row._searchString.includes(term));
             });
 
