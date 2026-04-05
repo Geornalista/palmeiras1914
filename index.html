@@ -501,7 +501,8 @@
 
         function isPalmeiras(teamName) {
             if(!teamName) return false;
-            return teamName.toLowerCase().includes('palmeiras') || teamName.toLowerCase().includes('palestra');
+            const name = teamName.toLowerCase().trim();
+            return name === 'palmeiras' || name === 'palestra italia' || name === 'palestra itália';
         }
 
         function renderJogos(data) {
