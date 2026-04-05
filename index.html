@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Estatísticas do Palmeiras</title>
-    
+
     <!-- PWA / Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#006437">
@@ -12,21 +12,19 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Estatísticas do Palmeiras">
-    <!-- Recomendado: adicione um link para o ícone da Apple no seu servidor -->
-    <!-- <link rel="apple-touch-icon" href="icon-192x192.png"> -->
 
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Bebas Neue + DM Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- PapaParse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-    <!-- Script inicial para prevenir "flash" do tema claro caso usuário prefira dark -->
+    <!-- Script inicial para prevenir "flash" do tema claro -->
     <script>
         if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -38,19 +36,32 @@
     <!-- Tailwind Config -->
     <script>
         tailwind.config = {
-            darkMode: 'class', // Habilita o modo escuro por classe
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        display: ['"Bebas Neue"', 'sans-serif'],
+                        body: ['"DM Sans"', 'sans-serif'],
                     },
                     colors: {
-                        palmeiras: {
-                            dark: '#006437',  /* Verde Escuro Oficial */
-                            light: '#048446', /* Verde Mais Claro */
-                            gold: '#cf982a',  /* Dourado */
-                            bg: '#f0fdf4'     /* Fundo esverdeado bem claro */
+                        verde: {
+                            900: '#002d17',
+                            800: '#004d27',
+                            700: '#006437',
+                            600: '#048446',
+                            500: '#06a655',
+                            400: '#2ecc71',
+                            100: '#e6f7ed',
+                            50:  '#f0fdf4',
+                        },
+                        ouro: {
+                            DEFAULT: '#cf982a',
+                            light: '#e8b84b',
+                            dark: '#a87520',
                         }
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
                     }
                 }
             }
@@ -58,102 +69,231 @@
     </script>
 
     <style>
-        /* Estilização da Barra de Rolagem */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1; 
-            border-radius: 4px;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #4b5563; 
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8; 
+        * { font-family: 'DM Sans', sans-serif; }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #006437; border-radius: 99px; }
+        .dark ::-webkit-scrollbar-thumb { background: #048446; }
+
+        /* ===== TABS ===== */
+        .tab-content { display: none; opacity: 0; transition: opacity 0.2s ease; }
+        .tab-content.active { display: block; opacity: 1; animation: fadeUp 0.2s ease-out forwards; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Efeitos de Transição para as Abas */
-        .tab-content {
-            display: none;
-            opacity: 0;
-            transition: opacity 0.15s ease-in-out;
-        }
-        .tab-content.active {
-            display: block;
-            opacity: 1;
-            animation: fadeIn 0.15s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(2px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Congelar primeira coluna da tabela de escalações */
+        /* ===== STICKY COL ===== */
         .sticky-col {
-            position: sticky;
-            left: 0;
-            z-index: 10;
-            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+            position: sticky; left: 0; z-index: 10;
+            box-shadow: 3px 0 8px -2px rgba(0,0,0,0.08);
         }
-        .dark .sticky-col {
-            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.5);
+        .dark .sticky-col { box-shadow: 3px 0 8px -2px rgba(0,0,0,0.4); }
+
+        /* ===== HEADER GRADIENT ===== */
+        .header-bg {
+            background: linear-gradient(135deg, #002d17 0%, #006437 55%, #048446 100%);
         }
+        .dark .header-bg {
+            background: linear-gradient(135deg, #001810 0%, #003d22 55%, #006437 100%);
+        }
+
+        /* ===== GLASS CARD ===== */
+        .glass {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dark .glass {
+            background: rgba(17, 34, 25, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* ===== STAT CARD HOVER ===== */
+        .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,100,55,0.15); }
+
+        /* ===== RESULT BADGE ===== */
+        .badge-v { background: #dcfce7; color: #15803d; }
+        .badge-e { background: #f3f4f6; color: #4b5563; }
+        .badge-d { background: #fee2e2; color: #dc2626; }
+        .dark .badge-v { background: rgba(21,128,61,0.25); color: #4ade80; }
+        .dark .badge-e { background: rgba(75,85,99,0.3); color: #9ca3af; }
+        .dark .badge-d { background: rgba(220,38,38,0.2); color: #f87171; }
+
+        /* ===== TABLE ROW HOVER ===== */
+        .trow:hover { background: rgba(0,100,55,0.04); }
+        .dark .trow:hover { background: rgba(4,132,70,0.08); }
+
+        /* ===== MATCH CARD (MOBILE) ===== */
+        .match-card {
+            border-left: 3px solid #006437;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .match-card:hover { transform: translateX(2px); box-shadow: 0 4px 20px rgba(0,100,55,0.12); }
+
+        /* ===== SEARCH CONTAINER ===== */
+        .search-wrap:focus-within {
+            border-color: #006437;
+            box-shadow: 0 0 0 3px rgba(0,100,55,0.12);
+        }
+
+        /* ===== SCORE PILL ===== */
+        .score-pill {
+            background: linear-gradient(135deg, #006437, #048446);
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.05em;
+        }
+        .dark .score-pill {
+            background: linear-gradient(135deg, #004d27, #006437);
+        }
+
+        /* ===== SHINE EFFECT PARA APROVEITAMENTO ===== */
+        .shine-card {
+            background: linear-gradient(135deg, #006437, #048446);
+            position: relative;
+            overflow: hidden;
+        }
+        .shine-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -60%;
+            width: 40%; height: 200%;
+            background: rgba(255,255,255,0.12);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+        }
+        .shine-card:hover::after { left: 120%; }
+
+        /* ===== LOADING SHIMMER ===== */
+        @keyframes shimmer {
+            0% { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #e8f5ee 25%, #d0eedd 50%, #e8f5ee 75%);
+            background-size: 800px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .dark .shimmer {
+            background: linear-gradient(90deg, #0a2017 25%, #0f3024 50%, #0a2017 75%);
+            background-size: 800px 100%;
+        }
+
+        /* Esconde a barra de rolagem horizontal nas tabs sem perder funcionalidade */
+        .hide-scrollbar { scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* ===== SPINNER VERDE ===== */
+        .spinner {
+            width: 44px; height: 44px;
+            border: 4px solid rgba(0,100,55,0.15);
+            border-top-color: #006437;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== UPLOAD DROP AREA ===== */
+        .upload-area {
+            border: 2px dashed #006437;
+            transition: all 0.2s ease;
+        }
+        .upload-area:hover { background: rgba(0,100,55,0.04); border-color: #048446; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
+<body class="bg-verde-50 dark:bg-verde-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
 
-    <!-- Header / Cabeçalho -->
-    <header class="bg-palmeiras-dark dark:bg-gray-950 text-white shadow-lg relative overflow-hidden transition-colors duration-300 border-b border-palmeiras-gold/20">
-        <!-- Padrão de fundo opcional -->
-        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
-        
+    <!-- ========== HEADER ========== -->
+    <header class="header-bg text-white relative overflow-hidden">
+        <!-- Pattern overlay -->
+        <div class="absolute inset-0 bg-hero-pattern pointer-events-none opacity-60"></div>
+        <!-- Diagonal accent -->
+        <div class="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none"
+             style="background: linear-gradient(to left, rgba(207,152,42,0.08), transparent)"></div>
+        <!-- Gold bottom line -->
+        <div class="absolute bottom-0 left-0 right-0 h-[2px]"
+             style="background: linear-gradient(90deg, transparent, #cf982a 30%, #e8b84b 50%, #cf982a 70%, transparent)"></div>
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10">
-            <div class="flex flex-row justify-between items-center gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <!-- Logo + Title -->
                 <div class="flex items-center gap-4">
-                    <!-- Escudo do Palmeiras via Wikimedia Commons -->
-                    <div class="w-14 h-14 bg-white/10 dark:bg-white/5 rounded-full p-1 flex items-center justify-center border-2 border-palmeiras-gold shadow-md shrink-0">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg" alt="Escudo do Palmeiras" class="w-full h-full object-contain drop-shadow-md">
+                    <div class="relative shrink-0">
+                        <div class="w-14 h-14 rounded-full flex items-center justify-center"
+                             style="background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%); border: 2px solid rgba(207,152,42,0.6); box-shadow: 0 0 0 4px rgba(207,152,42,0.1), 0 4px 20px rgba(0,0,0,0.3)">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg"
+                                 alt="Escudo do Palmeiras" class="w-9 h-9 object-contain drop-shadow-lg">
+                        </div>
                     </div>
                     <div>
-                        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white uppercase leading-tight">Estatísticas do Palmeiras</h1>
-                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico de Partidas e Escalações</p>
+                        <h1 class="font-display text-3xl md:text-4xl leading-none tracking-wider text-white"
+                            style="text-shadow: 0 2px 12px rgba(0,0,0,0.3)">
+                            ESTATÍSTICAS DO PALMEIRAS
+                        </h1>
+                        <p class="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mt-0.5"
+                           style="color: #e8b84b; text-shadow: 0 1px 4px rgba(0,0,0,0.3)">
+                            Histórico · Partidas · Escalações
+                        </p>
                     </div>
                 </div>
 
-                <!-- Botão Toggle Dark Mode -->
-                <button id="theme-toggle" type="button" class="text-white hover:bg-white/20 dark:hover:bg-gray-800 rounded-full text-sm p-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-palmeiras-gold">
-                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                <!-- Dark Mode Toggle -->
+                <button id="theme-toggle" type="button"
+                        class="relative w-10 h-10 rounded-full flex items-center justify-center transition-all focus:outline-none"
+                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);"
+                        onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.1)'"
+                        title="Alternar tema">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                    </svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+                    </svg>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Conteúdo Principal -->
+    <!-- ========== MAIN ========== -->
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
-        <!-- Estado de Carregamento Inicial -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20 text-palmeiras-dark dark:text-palmeiras-light">
-            <svg class="animate-spin h-10 w-10 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="font-semibold text-lg animate-pulse">Carregando base de dados...</p>
+        <!-- Estado de Carregamento -->
+        <div id="loading" class="flex flex-col items-center justify-center py-24 gap-5">
+            <div class="spinner"></div>
+            <p class="font-display text-2xl tracking-widest text-verde-700 dark:text-verde-500">CARREGANDO...</p>
+            <!-- Shimmer placeholders -->
+            <div class="w-full max-w-2xl space-y-3 mt-4">
+                <div class="shimmer h-10 rounded-xl"></div>
+                <div class="shimmer h-10 rounded-xl opacity-80"></div>
+                <div class="shimmer h-10 rounded-xl opacity-60"></div>
+            </div>
         </div>
 
-        <!-- Seção de Upload de Arquivo (Fallback) -->
-        <div id="upload-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 text-center transition-colors">
-            <div class="max-w-md mx-auto">
-                <svg class="mx-auto h-12 w-12 text-palmeiras-light dark:text-palmeiras-gold mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Modo de Pré-visualização</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o arquivo <strong>palmeiras.csv</strong> manualmente para prosseguir.</p>
-                <label class="cursor-pointer bg-palmeiras-dark dark:bg-palmeiras-light text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light dark:hover:bg-palmeiras-dark transition-colors shadow-md inline-block">
+        <!-- Seção de Upload (Fallback) -->
+        <div id="upload-section" class="hidden mb-6">
+            <div class="upload-area rounded-2xl p-10 text-center bg-white dark:bg-verde-900/40 max-w-lg mx-auto">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                     style="background: rgba(0,100,55,0.1)">
+                    <svg class="w-8 h-8 text-verde-700 dark:text-verde-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <h3 class="font-display text-2xl tracking-wider text-verde-800 dark:text-verde-300 mb-2">MODO PRÉ-VISUALIZAÇÃO</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o arquivo <strong class="text-verde-700 dark:text-verde-400">palmeiras.csv</strong> para continuar</p>
+                <label class="cursor-pointer inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all shadow-lg"
+                       style="background: linear-gradient(135deg, #006437, #048446); box-shadow: 0 4px 16px rgba(0,100,55,0.35)"
+                       onmouseover="this.style.boxShadow='0 6px 24px rgba(0,100,55,0.5)'"
+                       onmouseout="this.style.boxShadow='0 4px 16px rgba(0,100,55,0.35)'">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
                     Selecionar arquivo CSV
                     <input type="file" id="csvFileInput" accept=".csv" class="hidden">
                 </label>
@@ -161,164 +301,217 @@
         </div>
 
         <!-- Mensagem de Erro -->
-        <div id="error-message" class="hidden bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-red-700 dark:text-red-400" id="error-text">Não foi possível carregar o arquivo CSV.</p>
-                </div>
+        <div id="error-message" class="hidden rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-4 mb-6 flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0">
+                <svg class="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
             </div>
+            <p class="text-sm text-red-700 dark:text-red-400 pt-1" id="error-text">Não foi possível carregar o arquivo CSV.</p>
         </div>
 
-        <!-- CONTEÚDO DA APLICAÇÃO -->
+        <!-- ========== APP CONTENT ========== -->
         <div id="app-content" class="hidden">
-            <!-- Controles e Abas -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
-                <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                    
-                    <!-- Navegação de Abas -->
-                    <nav class="flex space-x-1 sm:space-x-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar" aria-label="Tabs">
-                        <button onclick="changeTab('jogos')" id="tab-jogos" class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all">
-                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+
+            <!-- Controles: Tabs + Busca -->
+            <div class="bg-white dark:bg-verde-900/50 rounded-2xl shadow-sm border border-gray-100 dark:border-verde-800/40 p-4 mb-5 transition-colors">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+
+                    <!-- Abas -->
+                    <nav class="flex gap-2 w-full lg:w-auto hide-scrollbar overflow-x-auto pb-1 lg:pb-0" aria-label="Tabs">
+                        <button onclick="changeTab('jogos')" id="tab-jogos"
+                                class="tab-btn shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all active-tab">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
                             Partidas
                         </button>
-                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes" class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all">
-                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes"
+                                class="tab-btn shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all inactive-tab">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
                             Escalações
                         </button>
                     </nav>
 
-                    <!-- Filtro / Busca com Suporte a Tags -->
-                    <div class="w-full lg:w-[28rem] xl:w-[32rem] relative">
-                        <div id="searchContainer" class="flex flex-wrap items-center w-full min-h-[42px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 px-2 py-1 transition-colors focus-within:ring-2 focus-within:ring-palmeiras-light focus-within:border-palmeiras-light cursor-text" onclick="document.getElementById('searchInput').focus()">
-                            <div class="flex items-center justify-center pl-1 pr-2 pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            </div>
-                            <!-- Container onde as tags/pílulas serão inseridas -->
-                            <div id="tags-container" class="flex flex-wrap gap-1.5 items-center empty:hidden ml-1"></div>
-                            
-                            <!-- Input invisível -->
-                            <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
-                                class="flex-grow min-w-[120px] bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none py-1 px-1 sm:text-sm">
+                    <!-- Busca com tags -->
+                    <div class="w-full lg:w-[30rem]">
+                        <div id="searchContainer"
+                             class="search-wrap flex flex-wrap items-center w-full min-h-[44px] border border-gray-200 dark:border-verde-700/50 rounded-xl bg-gray-50 dark:bg-verde-900/60 px-3 py-1.5 transition-all cursor-text"
+                             onclick="document.getElementById('searchInput').focus()">
+                            <svg class="h-4 w-4 text-gray-400 dark:text-verde-600 shrink-0 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <div id="tags-container" class="flex flex-wrap gap-1.5 items-center empty:hidden"></div>
+                            <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999…"
+                                   class="flex-grow min-w-[120px] bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-verde-600/70 focus:outline-none py-1 text-sm">
                         </div>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ml-1">Use vírgula (,) ou Enter para adicionar um termo.</p>
+                        <p class="text-[10px] text-gray-400 dark:text-verde-600 mt-1 ml-1">Vírgula (,) ou Enter para adicionar termo</p>
                     </div>
                 </div>
             </div>
 
-            <!-- PAINEL DE ESTATÍSTICAS CONSOLIDADAS -->
-            <div id="stats-container" class="hidden mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                <div class="bg-palmeiras-bg dark:bg-palmeiras-dark/20 px-5 py-3 border-b border-palmeiras-light/30 dark:border-palmeiras-light/20 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-palmeiras-dark dark:text-palmeiras-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <h3 class="text-sm font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wide">Aproveitamento Consolidado da Busca</h3>
-                </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 text-center">
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Jogos</p>
-                            <p id="stat-jogos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
+            <!-- Painel de Estatísticas -->
+            <div id="stats-container" class="hidden mb-5">
+                <div class="rounded-2xl overflow-hidden border border-gray-100 dark:border-verde-800/40 bg-white dark:bg-verde-900/50 shadow-sm">
+                    <!-- Header do painel -->
+                    <div class="px-5 py-3 border-b border-gray-100 dark:border-verde-800/40 flex items-center gap-2"
+                         style="background: linear-gradient(135deg, rgba(0,100,55,0.05), rgba(4,132,70,0.03))">
+                        <svg class="w-4 h-4 text-verde-700 dark:text-verde-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <span class="font-display text-sm tracking-[0.15em] text-verde-800 dark:text-verde-300 uppercase">Aproveitamento Consolidado</span>
+                    </div>
+                    <!-- Cards de estatísticas -->
+                    <div class="p-4 grid grid-cols-4 md:grid-cols-8 gap-2">
+
+                        <div class="stat-card col-span-1 bg-gray-50 dark:bg-verde-900/60 rounded-xl p-3 text-center border border-gray-100 dark:border-verde-800/30 cursor-default">
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest mb-1">Jogos</p>
+                            <p id="stat-jogos" class="font-display text-2xl tracking-wider text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border border-green-100 dark:border-green-800/50 flex flex-col justify-center">
-                            <p class="text-[10px] text-green-700 dark:text-green-400 uppercase font-bold tracking-wider mb-1">Vitórias</p>
-                            <p id="stat-vitorias" class="text-xl font-black text-green-700 dark:text-green-400">-</p>
+
+                        <div class="stat-card col-span-1 rounded-xl p-3 text-center border cursor-default"
+                             style="background: rgba(21,128,61,0.06); border-color: rgba(21,128,61,0.15)">
+                            <p class="text-[9px] text-green-700 dark:text-green-400 uppercase font-bold tracking-widest mb-1">Vitórias</p>
+                            <p id="stat-vitorias" class="font-display text-2xl tracking-wider text-green-700 dark:text-green-400">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-600 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Empates</p>
-                            <p id="stat-empates" class="text-xl font-black text-gray-700 dark:text-gray-200">-</p>
+
+                        <div class="stat-card col-span-1 bg-gray-50 dark:bg-verde-900/60 rounded-xl p-3 text-center border border-gray-100 dark:border-verde-800/30 cursor-default">
+                            <p class="text-[9px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-widest mb-1">Empates</p>
+                            <p id="stat-empates" class="font-display text-2xl tracking-wider text-gray-700 dark:text-gray-300">-</p>
                         </div>
-                        <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border border-red-100 dark:border-red-800/50 flex flex-col justify-center">
-                            <p class="text-[10px] text-red-700 dark:text-red-400 uppercase font-bold tracking-wider mb-1">Derrotas</p>
-                            <p id="stat-derrotas" class="text-xl font-black text-red-600 dark:text-red-400">-</p>
+
+                        <div class="stat-card col-span-1 rounded-xl p-3 text-center border cursor-default"
+                             style="background: rgba(220,38,38,0.05); border-color: rgba(220,38,38,0.15)">
+                            <p class="text-[9px] text-red-600 dark:text-red-400 uppercase font-bold tracking-widest mb-1">Derrotas</p>
+                            <p id="stat-derrotas" class="font-display text-2xl tracking-wider text-red-600 dark:text-red-400">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Pró</p>
-                            <p id="stat-gols-pro" class="text-xl font-black text-gray-800 dark:text-white">-</p>
+
+                        <div class="stat-card col-span-1 bg-gray-50 dark:bg-verde-900/60 rounded-xl p-3 text-center border border-gray-100 dark:border-verde-800/30 cursor-default">
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest mb-1">Gols Pró</p>
+                            <p id="stat-gols-pro" class="font-display text-2xl tracking-wider text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Sofr.</p>
-                            <p id="stat-gols-sofridos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
+
+                        <div class="stat-card col-span-1 bg-gray-50 dark:bg-verde-900/60 rounded-xl p-3 text-center border border-gray-100 dark:border-verde-800/30 cursor-default">
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest mb-1">Gols Sofr.</p>
+                            <p id="stat-gols-sofridos" class="font-display text-2xl tracking-wider text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Saldo</p>
-                            <p id="stat-saldo" class="text-xl font-black text-gray-800 dark:text-white">-</p>
+
+                        <div class="stat-card col-span-1 bg-gray-50 dark:bg-verde-900/60 rounded-xl p-3 text-center border border-gray-100 dark:border-verde-800/30 cursor-default">
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest mb-1">Saldo</p>
+                            <p id="stat-saldo" class="font-display text-2xl tracking-wider text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-palmeiras-dark dark:bg-palmeiras-light rounded-lg p-3 border border-palmeiras-dark dark:border-palmeiras-light flex flex-col justify-center shadow-inner">
-                            <p class="text-[10px] text-palmeiras-gold dark:text-white uppercase font-bold tracking-wider mb-1">Aprov.</p>
-                            <p id="stat-aproveitamento" class="text-xl font-black text-white">-</p>
+
+                        <div class="stat-card shine-card col-span-1 rounded-xl p-3 text-center cursor-default"
+                             style="box-shadow: 0 4px 16px rgba(0,100,55,0.25)">
+                            <p class="text-[9px] text-green-200 uppercase font-bold tracking-widest mb-1">Aprov.</p>
+                            <p id="stat-aproveitamento" class="font-display text-2xl tracking-wider text-white">-</p>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- Aviso de Limite de Resultados (Performance) -->
-            <div id="limit-message" class="hidden text-sm text-yellow-800 dark:text-yellow-200 mb-6 text-center font-medium bg-yellow-100 dark:bg-yellow-900/50 py-3 rounded-lg border border-yellow-200 dark:border-yellow-700/50">
-                Muitos resultados encontrados! Mostrando os 150 primeiros na tabela. Continue digitando para refinar.
+            <!-- Aviso Limite de Resultados -->
+            <div id="limit-message" class="hidden mb-4 text-sm text-yellow-800 dark:text-yellow-300 text-center font-medium rounded-xl border border-yellow-200 dark:border-yellow-700/40 bg-yellow-50 dark:bg-yellow-900/20 py-3 px-4 flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 text-yellow-600 dark:text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+                </svg>
+                Muitos resultados! Exibindo os primeiros 150. Continue digitando para refinar.
             </div>
 
-            <!-- ABA 1: JOGOS -->
+            <!-- ======= ABA 1: JOGOS ======= -->
             <div id="content-jogos" class="tab-content active">
-                
-                <!-- Visão Mobile (Cards) -->
-                <div id="mobile-jogos-container" class="grid grid-cols-1 gap-4 md:hidden">
-                    <!-- Preenchido via JS -->
-                </div>
 
-                <!-- Visão Desktop/Tablet (Tabela) -->
-                <div class="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+                <!-- Mobile: Cards -->
+                <div id="mobile-jogos-container" class="grid grid-cols-1 gap-3 md:hidden"></div>
+
+                <!-- Desktop: Tabela -->
+                <div class="hidden md:block bg-white dark:bg-verde-900/50 rounded-2xl shadow-sm border border-gray-100 dark:border-verde-800/40 overflow-hidden transition-colors">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Campeonato</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mandante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Placar</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Visitante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Detalhes</th>
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="border-b border-gray-100 dark:border-verde-800/40"
+                                    style="background: linear-gradient(135deg, rgba(0,100,55,0.04), rgba(4,132,70,0.02))">
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Data</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Campeonato</th>
+                                    <th class="px-5 py-3.5 text-right text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Mandante</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Placar</th>
+                                    <th class="px-5 py-3.5 text-left text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Visitante</th>
+                                    <th class="px-5 py-3.5 text-center text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em]">Link</th>
                                 </tr>
                             </thead>
-                            <tbody id="desktop-jogos-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Preenchido via JS -->
-                            </tbody>
+                            <tbody id="desktop-jogos-body" class="divide-y divide-gray-50 dark:divide-verde-800/20"></tbody>
                         </table>
                     </div>
                 </div>
-                
+
                 <!-- Sem resultados -->
-                <div id="no-results-jogos" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
-                    <p class="text-lg">Nenhuma partida encontrada para a busca.</p>
+                <div id="no-results-jogos" class="hidden py-16 text-center bg-white dark:bg-verde-900/40 rounded-2xl border border-gray-100 dark:border-verde-800/40">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                         style="background: rgba(0,100,55,0.08)">
+                        <svg class="w-7 h-7 text-verde-600 dark:text-verde-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <p class="font-display text-xl tracking-wider text-gray-400 dark:text-verde-600">NENHUMA PARTIDA ENCONTRADA</p>
+                    <p class="text-sm text-gray-400 mt-1">Tente um termo diferente</p>
                 </div>
             </div>
 
-            <!-- ABA 2: ESCALAÇÕES -->
+            <!-- ======= ABA 2: ESCALAÇÕES ======= -->
             <div id="content-escalacoes" class="tab-content">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden relative transition-colors">
-                    <div class="overflow-x-auto max-h-[70vh]">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 relative">
-                            <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-20">
-                                <tr id="escalacoes-header">
-                                    <!-- Preenchido via JS -->
+                <div class="bg-white dark:bg-verde-900/50 rounded-2xl shadow-sm border border-gray-100 dark:border-verde-800/40 overflow-hidden transition-colors">
+                    <div class="overflow-x-auto" style="max-height: 72vh;">
+                        <table class="min-w-full relative">
+                            <thead class="sticky top-0 z-20">
+                                <tr id="escalacoes-header"
+                                    style="background: linear-gradient(135deg, rgba(0,100,55,0.06), rgba(4,132,70,0.03))">
                                 </tr>
                             </thead>
-                            <tbody id="escalacoes-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- Preenchido via JS -->
-                            </tbody>
+                            <tbody id="escalacoes-body" class="divide-y divide-gray-50 dark:divide-verde-800/20 bg-white dark:bg-verde-900/40"></tbody>
                         </table>
                     </div>
                 </div>
                 <!-- Sem resultados -->
-                <div id="no-results-escalacoes" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
-                    <p class="text-lg">Nenhuma escalação encontrada para a busca.</p>
+                <div id="no-results-escalacoes" class="hidden py-16 text-center bg-white dark:bg-verde-900/40 rounded-2xl border border-gray-100 dark:border-verde-800/40 mt-4">
+                    <p class="font-display text-xl tracking-wider text-gray-400 dark:text-verde-600">NENHUMA ESCALAÇÃO ENCONTRADA</p>
                 </div>
             </div>
-        </div>
 
+        </div><!-- /app-content -->
     </main>
 
+    <!-- ========== FOOTER ========== -->
+    <footer class="mt-auto border-t border-gray-100 dark:border-verde-800/30 py-4 text-center">
+        <p class="text-xs text-gray-400 dark:text-verde-700">
+            Avanti Palestra &nbsp;·&nbsp; Verdão para sempre
+        </p>
+    </footer>
+
+    <!-- ========== STYLES DINÂMICOS DAS TABS ========== -->
+    <style>
+        .active-tab {
+            background: linear-gradient(135deg, #006437, #048446);
+            color: white;
+            box-shadow: 0 4px 14px rgba(0,100,55,0.3);
+        }
+        .inactive-tab {
+            background: transparent;
+            color: #6b7280;
+        }
+        .dark .inactive-tab { color: #9ca3af; }
+        .inactive-tab:hover {
+            background: rgba(0,100,55,0.06);
+            color: #006437;
+        }
+        .dark .inactive-tab:hover { color: #4ade80; }
+    </style>
+
+    <!-- ========== SCRIPTS ========== -->
     <script>
-        // Lógica do Dark Mode Toggle
+        // ===== DARK MODE =====
         const themeToggleBtn = document.getElementById('theme-toggle');
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
@@ -329,10 +522,9 @@
             darkIcon.classList.remove('hidden');
         }
 
-        themeToggleBtn.addEventListener('click', function() {
+        themeToggleBtn.addEventListener('click', () => {
             darkIcon.classList.toggle('hidden');
             lightIcon.classList.toggle('hidden');
-
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('color-theme', 'light');
@@ -342,45 +534,39 @@
             }
         });
 
-        // Variáveis Globais
+        // ===== GLOBALS =====
         let allData = [];
         let currentTab = 'jogos';
         let searchTimeout;
-        let activeTags = []; // Array que armazena os termos da busca
-        
+        let activeTags = [];
+
         const searchInput = document.getElementById('searchInput');
         const tagsContainer = document.getElementById('tags-container');
 
-        // Função utilitária para remover acentos de strings
         function removeAccents(str) {
             if (!str) return '';
-            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         }
 
+        // ===== INIT =====
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
             loadServerCSVData();
 
-            // Evento para criar tags quando o usuário digita uma vírgula
             searchInput.addEventListener('input', (e) => {
                 const val = e.target.value;
                 if (val.includes(',')) {
                     const parts = val.split(',');
-                    // Todas as partes, exceto a última (após a última vírgula), viram tags
                     for (let i = 0; i < parts.length - 1; i++) {
                         const tagStr = parts[i].trim();
-                        if (tagStr && !activeTags.includes(tagStr)) {
-                            activeTags.push(tagStr);
-                        }
+                        if (tagStr && !activeTags.includes(tagStr)) activeTags.push(tagStr);
                     }
-                    // A última parte volta para o input
                     searchInput.value = parts[parts.length - 1].trimStart();
                     updateTagsUI();
                 }
                 triggerSearchDebounce();
             });
 
-            // Evento para criar tag ao pressionar Enter ou apagar com Backspace
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -392,7 +578,6 @@
                         triggerSearchDebounce();
                     }
                 } else if (e.key === 'Backspace' && searchInput.value === '' && activeTags.length > 0) {
-                    // Remove a última tag se o input estiver vazio e apertar Backspace
                     activeTags.pop();
                     updateTagsUI();
                     triggerSearchDebounce();
@@ -404,24 +589,20 @@
             tagsContainer.innerHTML = '';
             activeTags.forEach((tag, index) => {
                 const tagEl = document.createElement('span');
-                tagEl.className = 'inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-palmeiras-light/10 text-palmeiras-dark dark:bg-palmeiras-light/20 dark:text-palmeiras-light border border-palmeiras-light/20 dark:border-palmeiras-light/30 shadow-sm';
+                tagEl.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold';
+                tagEl.style.cssText = 'background: rgba(0,100,55,0.1); color: #006437; border: 1px solid rgba(0,100,55,0.2);';
                 tagEl.innerHTML = `
                     ${tag}
-                    <button type="button" class="ml-1.5 inline-flex text-palmeiras-dark/50 hover:text-palmeiras-dark dark:text-palmeiras-light/60 dark:hover:text-palmeiras-light focus:outline-none" onclick="removeTag(${index})">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-                    </button>
-                `;
+                    <button type="button" onclick="removeTag(${index})" class="ml-0.5 opacity-60 hover:opacity-100 transition-opacity focus:outline-none">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>`;
                 tagsContainer.appendChild(tagEl);
             });
-            
-            if (activeTags.length > 0) {
-                searchInput.placeholder = "Adicionar...";
-            } else {
-                searchInput.placeholder = "Ex: Marcos, Arce, 1999...";
-            }
+            searchInput.placeholder = activeTags.length > 0 ? 'Adicionar…' : 'Ex: Marcos, Arce, 1999…';
         }
 
-        // Função chamada pelo botão "x" da tag
         window.removeTag = function(index) {
             activeTags.splice(index, 1);
             updateTagsUI();
@@ -431,57 +612,45 @@
 
         function triggerSearchDebounce() {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                renderData();
-            }, 300);
+            searchTimeout = setTimeout(() => renderData(), 300);
         }
 
+        // ===== TAB LOGIC =====
         function changeTab(tabName) {
             currentTab = tabName;
-            
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                if (btn.id === `tab-${tabName}`) {
-                    btn.className = 'tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all';
-                } else {
-                    btn.className = 'tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all';
-                }
+                const isActive = btn.id === `tab-${tabName}`;
+                btn.className = `tab-btn shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${isActive ? 'active-tab' : 'inactive-tab'}`;
             });
-
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(`content-${tabName}`).classList.add('active');
-
             renderData();
         }
 
+        // ===== DATA =====
         function preprocessData(data) {
             return data.map(row => {
-                const combinedStr = Object.values(row).join(' ').toLowerCase();
-                row._searchString = removeAccents(combinedStr);
+                row._searchString = removeAccents(Object.values(row).join(' ').toLowerCase());
                 return row;
             });
         }
 
         function loadServerCSVData() {
             fetch('palmeiras.csv')
-                .then(response => {
-                    if (!response.ok) throw new Error(`Status: ${response.status}`);
-                    return response.text();
-                })
+                .then(r => { if (!r.ok) throw new Error(`Status: ${r.status}`); return r.text(); })
                 .then(csvText => {
                     Papa.parse(csvText, {
-                        header: true, delimiter: ";", skipEmptyLines: true,
-                        complete: function(results) {
+                        header: true, delimiter: ';', skipEmptyLines: true,
+                        complete: (results) => {
                             allData = preprocessData(results.data);
                             document.getElementById('loading').style.display = 'none';
                             document.getElementById('app-content').classList.remove('hidden');
                             renderData();
                         },
-                        error: function(error) { showError("Erro: " + error.message); }
+                        error: (err) => showError('Erro: ' + err.message)
                     });
                 })
-                .catch(error => {
+                .catch(() => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('upload-section').style.display = 'block';
                 });
@@ -490,21 +659,19 @@
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             document.getElementById('upload-section').style.display = 'none';
             document.getElementById('error-message').classList.add('hidden');
             document.getElementById('loading').style.display = 'flex';
-            
             Papa.parse(file, {
-                header: true, delimiter: ";", skipEmptyLines: true,
-                complete: function(results) {
+                header: true, delimiter: ';', skipEmptyLines: true,
+                complete: (results) => {
                     allData = preprocessData(results.data);
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
                     renderData();
                 },
-                error: function(error) {
-                    showError("Erro: " + error.message);
+                error: (err) => {
+                    showError('Erro: ' + err.message);
                     document.getElementById('upload-section').style.display = 'block';
                 }
             });
@@ -517,24 +684,19 @@
             document.getElementById('error-text').innerText = msg;
         }
 
+        // ===== STATISTICS =====
         function calcularEstatisticas(data) {
             const statsContainer = document.getElementById('stats-container');
-            if (data.length === 0) {
-                statsContainer.classList.add('hidden');
-                return;
-            }
+            if (data.length === 0) { statsContainer.classList.add('hidden'); return; }
 
-            let jogosRealizados = 0; let vitorias = 0; let empates = 0; let derrotas = 0;
-            let golsPro = 0; let golsSofridos = 0;
+            let jogosRealizados = 0, vitorias = 0, empates = 0, derrotas = 0, golsPro = 0, golsSofridos = 0;
 
             data.forEach(row => {
                 const isMandante = isPalmeiras(row['Mandante']);
                 const isVisitante = isPalmeiras(row['Visitante']);
                 if (!isMandante && !isVisitante) return;
-
                 const golH = parseInt(row['GOLS_H']);
                 const golA = parseInt(row['GOLS_A']);
-
                 if (!isNaN(golH) && !isNaN(golA)) {
                     jogosRealizados++;
                     if (isMandante) {
@@ -558,33 +720,27 @@
             document.getElementById('stat-gols-pro').innerText = golsPro;
             document.getElementById('stat-gols-sofridos').innerText = golsSofridos;
             document.getElementById('stat-saldo').innerText = saldo > 0 ? '+' + saldo : saldo;
-            document.getElementById('stat-aproveitamento').innerText = aproveitamento.toFixed(2).replace('.', ',') + '%';
+            document.getElementById('stat-aproveitamento').innerText = aproveitamento.toFixed(1).replace('.', ',') + '%';
         }
 
-        // A pesquisa agora usa a lista de tags ativas + o texto que estiver na caixa
+        // ===== RENDER =====
         function renderData() {
             if (allData.length === 0) return;
 
-            // Combina os termos das tags com o que estiver parcialmente digitado no input
             let termsToSearch = [...activeTags];
             const currentInput = searchInput.value.trim();
-            if (currentInput) {
-                termsToSearch.push(currentInput);
-            }
+            if (currentInput) termsToSearch.push(currentInput);
 
-            // Normaliza (tira acento e bota em minúsculo) os termos
             const searchTerms = termsToSearch.map(t => removeAccents(t.toLowerCase())).filter(t => t !== '');
 
-            const filteredData = allData.filter(row => {
-                if (searchTerms.length === 0) return true;
-                return searchTerms.every(term => row._searchString.includes(term));
-            });
+            const filteredData = allData.filter(row =>
+                searchTerms.length === 0 ? true : searchTerms.every(term => row._searchString.includes(term))
+            );
 
             calcularEstatisticas(filteredData);
 
             const limitMessage = document.getElementById('limit-message');
             let dataToRender = filteredData;
-            
             if (filteredData.length > 150) {
                 dataToRender = filteredData.slice(0, 150);
                 limitMessage.classList.remove('hidden');
@@ -592,24 +748,22 @@
                 limitMessage.classList.add('hidden');
             }
 
-            if (currentTab === 'jogos') {
-                renderJogos(dataToRender);
-            } else if (currentTab === 'escalacoes') {
-                renderEscalacoes(dataToRender);
-            }
+            if (currentTab === 'jogos') renderJogos(dataToRender);
+            else if (currentTab === 'escalacoes') renderEscalacoes(dataToRender);
         }
 
         function isPalmeiras(teamName) {
-            if(!teamName) return false;
+            if (!teamName) return false;
             const name = teamName.toLowerCase().trim();
             return name === 'palmeiras' || name === 'palestra italia' || name === 'palestra itália';
         }
 
+        // ===== RENDER JOGOS =====
         function renderJogos(data) {
             const desktopBody = document.getElementById('desktop-jogos-body');
             const mobileContainer = document.getElementById('mobile-jogos-container');
             const noResults = document.getElementById('no-results-jogos');
-            
+
             desktopBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
             if (data.length === 0) {
@@ -617,84 +771,109 @@
                 desktopBody.parentElement.parentElement.classList.add('hidden');
                 mobileContainer.classList.add('hidden');
                 return;
-            } else {
-                noResults.classList.add('hidden');
-                desktopBody.parentElement.parentElement.classList.remove('hidden');
-                mobileContainer.classList.remove('hidden');
             }
+            noResults.classList.add('hidden');
+            desktopBody.parentElement.parentElement.classList.remove('hidden');
+            mobileContainer.classList.remove('hidden');
 
-            const desktopFragment = document.createDocumentFragment();
-            const mobileFragment = document.createDocumentFragment();
+            const desktopFrag = document.createDocumentFragment();
+            const mobileFrag = document.createDocumentFragment();
 
-            data.forEach((row) => {
-                const dataJogo = row['Data'] || '';
-                const camp = row['Campeonato'] || '';
-                const est = row['Estadio'] || '';
-                const mandante = row['Mandante'] || '';
-                const visitante = row['Visitante'] || '';
-                const golM = row['GOLS_H'] !== undefined ? row['GOLS_H'] : '-';
-                const golV = row['GOLS_A'] !== undefined ? row['GOLS_A'] : '-';
-                const link = row['LINK'] || '';
+            data.forEach(row => {
+                const dataJogo   = row['Data'] || '';
+                const camp       = row['Campeonato'] || '';
+                const est        = row['Estadio'] || '';
+                const mandante   = row['Mandante'] || '';
+                const visitante  = row['Visitante'] || '';
+                const golM       = row['GOLS_H'] !== undefined ? row['GOLS_H'] : '-';
+                const golV       = row['GOLS_A'] !== undefined ? row['GOLS_A'] : '-';
+                const link       = row['LINK'] || '';
 
-                const isMandanteVerdao = isPalmeiras(mandante);
+                const isMandanteVerdao  = isPalmeiras(mandante);
                 const isVisitanteVerdao = isPalmeiras(visitante);
 
-                const mandanteClass = isMandanteVerdao ? 'font-bold text-palmeiras-dark dark:text-palmeiras-light' : 'text-gray-700 dark:text-gray-300';
-                const visitanteClass = isVisitanteVerdao ? 'font-bold text-palmeiras-dark dark:text-palmeiras-light' : 'text-gray-700 dark:text-gray-300';
+                // Resultado para o Palmeiras
+                let resultado = '';
+                if (!isNaN(parseInt(golM)) && !isNaN(parseInt(golV))) {
+                    const gm = parseInt(golM), gv = parseInt(golV);
+                    if (isMandanteVerdao)  resultado = gm > gv ? 'V' : gm === gv ? 'E' : 'D';
+                    else if (isVisitanteVerdao) resultado = gv > gm ? 'V' : gv === gm ? 'E' : 'D';
+                }
 
+                const badgeClass = resultado === 'V' ? 'badge-v' : resultado === 'D' ? 'badge-d' : 'badge-e';
+                const mandanteClass = isMandanteVerdao
+                    ? 'font-bold text-verde-700 dark:text-verde-400'
+                    : 'text-gray-600 dark:text-gray-300';
+                const visitanteClass = isVisitanteVerdao
+                    ? 'font-bold text-verde-700 dark:text-verde-400'
+                    : 'text-gray-600 dark:text-gray-300';
+
+                // Desktop row
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-palmeiras-bg dark:hover:bg-palmeiras-dark/20 transition-colors duration-150';
+                tr.className = 'trow transition-colors duration-100';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${dataJogo}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${camp}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right ${mandanteClass}">${mandante}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white">
-                            ${golM} <span class="mx-2 text-gray-400 dark:text-gray-500 font-normal">x</span> ${golV}
+                    <td class="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${dataJogo}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap text-xs text-gray-400 dark:text-gray-500 max-w-[140px] truncate">${camp}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap text-sm text-right ${mandanteClass}">${mandante}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap text-center">
+                        <span class="inline-flex items-center gap-1">
+                            ${resultado ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded text-[9px] font-bold ${badgeClass}">${resultado}</span>` : ''}
+                            <span class="score-pill px-3 py-1 rounded-lg text-sm">${golM} <span class="opacity-50 font-sans font-light">×</span> ${golV}</span>
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm ${visitanteClass}">${visitante}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light dark:text-palmeiras-gold hover:text-palmeiras-dark dark:hover:text-white transition-colors inline-flex items-center gap-1" title="Ver Detalhes">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                        </a>` : '-'}
-                    </td>
-                `;
-                desktopFragment.appendChild(tr);
+                    <td class="px-5 py-3.5 whitespace-nowrap text-sm ${visitanteClass}">${visitante}</td>
+                    <td class="px-5 py-3.5 whitespace-nowrap text-center">
+                        ${link
+                            ? `<a href="${link}" target="_blank"
+                                  class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-verde-600 dark:text-verde-400 hover:bg-verde-50 dark:hover:bg-verde-800/40 transition-colors"
+                                  title="Ver detalhes">
+                                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                  </svg>
+                               </a>`
+                            : '<span class="text-gray-300 dark:text-gray-700">—</span>'}
+                    </td>`;
+                desktopFrag.appendChild(tr);
 
+                // Mobile card
                 const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm relative overflow-hidden transition-colors';
+                card.className = 'match-card bg-white dark:bg-verde-900/50 rounded-xl border border-gray-100 dark:border-verde-800/40 p-4 relative overflow-hidden shadow-sm';
                 card.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-palmeiras-light dark:bg-palmeiras-gold"></div>
-                    <div class="flex justify-between items-center mb-2 text-xs text-gray-500 dark:text-gray-400 pl-2">
-                        <span><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dataJogo}</span>
-                        <span class="truncate ml-2 max-w-[120px] font-medium text-palmeiras-dark dark:text-palmeiras-light">${camp}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 pl-2">
-                        <div class="flex-1 text-right pr-2 text-sm ${mandanteClass} truncate" title="${mandante}">${mandante}</div>
-                        <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-md font-bold text-gray-800 dark:text-white text-sm shadow-inner shrink-0">
-                            ${golM} <span class="text-gray-400 dark:text-gray-500 font-normal mx-1">x</span> ${golV}
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            ${resultado ? `<span class="inline-flex items-center justify-center w-6 h-6 rounded-md text-[10px] font-bold ${badgeClass}">${resultado}</span>` : ''}
+                            <span class="text-xs text-gray-400 dark:text-gray-500">${dataJogo}</span>
                         </div>
-                        <div class="flex-1 text-left pl-2 text-sm ${visitanteClass} truncate" title="${visitante}">${visitante}</div>
+                        <span class="text-xs font-medium text-verde-700 dark:text-verde-400 truncate max-w-[130px]">${camp}</span>
                     </div>
-                    <div class="flex justify-between items-center mt-2 text-xs text-gray-400 dark:text-gray-500 pl-2 border-t border-gray-100 dark:border-gray-700 pt-2">
-                        <span class="truncate flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            ${est}
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex-1 text-right text-sm ${mandanteClass} truncate" title="${mandante}">${mandante}</div>
+                        <div class="score-pill shrink-0 px-3 py-1.5 rounded-lg text-base font-display tracking-wider">
+                            ${golM} <span class="opacity-40 font-sans font-thin text-sm">×</span> ${golV}
+                        </div>
+                        <div class="flex-1 text-left text-sm ${visitanteClass} truncate" title="${visitante}">${visitante}</div>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-50 dark:border-verde-800/30 text-xs text-gray-400 dark:text-gray-500">
+                        <span class="flex items-center gap-1 truncate">
+                            <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            ${est || '—'}
                         </span>
-                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light dark:text-palmeiras-gold font-semibold ml-2">Ver Jogo &rarr;</a>` : ''}
-                    </div>
-                `;
-                mobileFragment.appendChild(card);
+                        ${link ? `<a href="${link}" target="_blank" class="font-semibold text-verde-600 dark:text-verde-400 hover:underline ml-2 shrink-0">Ver jogo →</a>` : ''}
+                    </div>`;
+                mobileFrag.appendChild(card);
             });
 
-            desktopBody.appendChild(desktopFragment);
-            mobileContainer.appendChild(mobileFragment);
+            desktopBody.appendChild(desktopFrag);
+            mobileContainer.appendChild(mobileFrag);
         }
 
+        // ===== RENDER ESCALAÇÕES =====
         function renderEscalacoes(data) {
-            const header = document.getElementById('escalacoes-header');
-            const body = document.getElementById('escalacoes-body');
+            const header    = document.getElementById('escalacoes-header');
+            const body      = document.getElementById('escalacoes-body');
             const noResults = document.getElementById('no-results-escalacoes');
 
             header.innerHTML = ''; body.innerHTML = '';
@@ -703,90 +882,70 @@
                 noResults.classList.remove('hidden');
                 header.parentElement.parentElement.classList.add('hidden');
                 return;
-            } else {
-                noResults.classList.add('hidden');
-                header.parentElement.parentElement.classList.remove('hidden');
             }
+            noResults.classList.add('hidden');
+            header.parentElement.parentElement.classList.remove('hidden');
 
             let maxFieldPlayers = 0;
-            
             const processedRows = data.map(row => {
-                const jogKeys = Object.keys(row).filter(k => k.toLowerCase().startsWith('jog')).sort((a, b) => (parseInt(a.replace(/\D/g, '')) || 0) - (parseInt(b.replace(/\D/g, '')) || 0));
-                
+                const jogKeys = Object.keys(row).filter(k => k.toLowerCase().startsWith('jog'))
+                    .sort((a, b) => (parseInt(a.replace(/\D/g,''))||0) - (parseInt(b.replace(/\D/g,''))||0));
                 const players = [];
-                jogKeys.forEach(k => {
-                    const val = row[k] ? row[k].trim() : '';
-                    if (val && val !== '-') players.push(val);
-                });
-                
+                jogKeys.forEach(k => { const v = row[k] ? row[k].trim() : ''; if (v && v !== '-') players.push(v); });
                 let tecnico = '-';
-                if (players.length > 0) tecnico = players.pop(); 
+                if (players.length > 0) tecnico = players.pop();
                 maxFieldPlayers = Math.max(maxFieldPlayers, players.length);
-                
                 const goleiroKey = Object.keys(row).find(k => k.toLowerCase() === 'goleiro');
                 const goleiroNome = goleiroKey && row[goleiroKey] ? row[goleiroKey].trim() : '-';
-
-                return { original: row, players: players, tecnico: tecnico, goleiro: goleiroNome };
+                return { original: row, players, tecnico, goleiro: goleiroNome };
             });
 
+            const thClass = 'px-4 py-3 text-left text-[10px] font-bold text-gray-400 dark:text-verde-600 uppercase tracking-[0.15em] whitespace-nowrap border-b border-gray-100 dark:border-verde-800/40';
             let theadHTML = `
-                <th scope="col" class="sticky-col bg-gray-50 dark:bg-gray-900 px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider z-30">Partida (Adversário)</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Goleiro</th>
-            `;
-            
+                <th scope="col" class="sticky-col bg-gray-50 dark:bg-verde-900 ${thClass} z-30">Partida</th>
+                <th scope="col" class="${thClass}">Goleiro</th>`;
             for (let i = 1; i <= maxFieldPlayers; i++) {
-                theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Jogador ${i}</th>`;
+                theadHTML += `<th scope="col" class="${thClass}">Jogador ${i}</th>`;
             }
-            
-            theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wider whitespace-nowrap bg-palmeiras-light/10 dark:bg-palmeiras-light/20">Técnico</th>`;
+            theadHTML += `<th scope="col" class="${thClass}" style="color:#006437">Técnico</th>`;
             header.innerHTML = theadHTML;
 
-            const fragment = document.createDocumentFragment();
-
+            const frag = document.createDocumentFragment();
             processedRows.forEach(pRow => {
                 const row = pRow.original;
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-palmeiras-bg dark:hover:bg-palmeiras-dark/20 transition-colors duration-150';
+                tr.className = 'trow transition-colors duration-100';
 
                 const dataJogo = row['Data'] || '';
                 const adversario = isPalmeiras(row['Mandante']) ? row['Visitante'] : row['Mandante'];
-                
+
                 let tdHTML = `
-                    <td class="sticky-col bg-white dark:bg-gray-800 px-4 py-3 whitespace-nowrap text-sm font-medium border-r border-gray-200 dark:border-gray-700 transition-colors">
-                        <div class="text-xs text-gray-500 dark:text-gray-400">${dataJogo}</div>
-                        <div class="text-palmeiras-dark dark:text-palmeiras-light">${adversario}</div>
+                    <td class="sticky-col bg-white dark:bg-verde-900/40 px-4 py-3 whitespace-nowrap text-sm border-r border-gray-100 dark:border-verde-800/30 transition-colors">
+                        <div class="text-[10px] text-gray-400 dark:text-verde-600 mb-0.5">${dataJogo}</div>
+                        <div class="font-semibold text-verde-700 dark:text-verde-400">${adversario}</div>
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">${pRow.goleiro}</td>
-                `;
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${pRow.goleiro}</td>`;
 
                 for (let i = 0; i < maxFieldPlayers; i++) {
                     const player = pRow.players[i] || '-';
-                    const textColor = player !== '-' ? 'text-gray-800 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600';
-                    tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
+                    tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${player !== '-' ? 'text-gray-700 dark:text-gray-300' : 'text-gray-300 dark:text-verde-800'}">${player}</td>`;
                 }
 
-                const tecColor = pRow.tecnico !== '-' ? 'text-palmeiras-dark dark:text-palmeiras-gold font-semibold' : 'text-gray-300 dark:text-gray-600';
-                tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${tecColor} bg-palmeiras-light/5 dark:bg-palmeiras-light/10">${pRow.tecnico}</td>`;
-
+                tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm font-semibold" style="color: ${pRow.tecnico !== '-' ? '#006437' : '#d1d5db'}">${pRow.tecnico}</td>`;
                 tr.innerHTML = tdHTML;
-                fragment.appendChild(tr);
+                frag.appendChild(tr);
             });
-
-            body.appendChild(fragment);
+            body.appendChild(frag);
         }
     </script>
 
-    <!-- Registro do Service Worker para PWA -->
+    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registrado com sucesso com o escopo: ', registration.scope);
-                    })
-                    .catch(err => {
-                        console.log('Falha ao registrar o ServiceWorker: ', err);
-                    });
+                    .then(r => console.log('SW registrado:', r.scope))
+                    .catch(e => console.log('Falha SW:', e));
             });
         }
     </script>
