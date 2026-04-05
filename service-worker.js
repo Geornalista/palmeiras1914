@@ -1,4 +1,4 @@
-const CACHE_NAME = 'palmeirs-v1';
+const CACHE_NAME = 'palmeirs-v0';
 
 const ASSETS = [
   './',
