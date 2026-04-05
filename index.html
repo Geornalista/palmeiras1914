@@ -2,9 +2,19 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Histórico e Escalações - Palmeiras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estatísticas do Palmeiras</title>
     
+    <!-- PWA / Mobile Meta Tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#006437">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Estatísticas do Palmeiras">
+    <!-- Recomendado: adicione um link para o ícone da Apple no seu servidor -->
+    <!-- <link rel="apple-touch-icon" href="icon-192x192.png"> -->
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,7 +99,6 @@
             position: sticky;
             left: 0;
             z-index: 10;
-            /* box-shadow removido daqui para tratar no tailwind com cores dark mode */
             box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
         }
         .dark .sticky-col {
@@ -673,6 +682,21 @@
             });
 
             body.appendChild(fragment);
+        }
+    </script>
+
+    <!-- Registro do Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registrado com sucesso com o escopo: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('Falha ao registrar o ServiceWorker: ', err);
+                    });
+            });
         }
     </script>
 </body>
