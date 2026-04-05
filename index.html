@@ -190,13 +190,20 @@
                         </button>
                     </nav>
 
-                    <!-- Filtro / Busca -->
-                    <div class="w-full lg:w-96 relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <!-- Filtro / Busca com Suporte a Tags -->
+                    <div class="w-full lg:w-[28rem] xl:w-[32rem] relative">
+                        <div id="searchContainer" class="flex flex-wrap items-center w-full min-h-[42px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 px-2 py-1 transition-colors focus-within:ring-2 focus-within:ring-palmeiras-light focus-within:border-palmeiras-light cursor-text" onclick="document.getElementById('searchInput').focus()">
+                            <div class="flex items-center justify-center pl-1 pr-2 pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <!-- Container onde as tags/pílulas serão inseridas -->
+                            <div id="tags-container" class="flex flex-wrap gap-1.5 items-center empty:hidden ml-1"></div>
+                            
+                            <!-- Input invisível -->
+                            <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
+                                class="flex-grow min-w-[120px] bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none py-1 px-1 sm:text-sm">
                         </div>
-                        <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-colors">
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ml-1">Use vírgula (,) ou Enter para adicionar um termo.</p>
                     </div>
                 </div>
             </div>
@@ -316,7 +323,6 @@
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
 
-        // Configuração inicial dos ícones baseado na classe atual
         if (document.documentElement.classList.contains('dark')) {
             lightIcon.classList.remove('hidden');
         } else {
@@ -340,13 +346,14 @@
         let allData = [];
         let currentTab = 'jogos';
         let searchTimeout;
+        let activeTags = []; // Array que armazena os termos da busca
         
         const searchInput = document.getElementById('searchInput');
+        const tagsContainer = document.getElementById('tags-container');
 
         // Função utilitária para remover acentos de strings
         function removeAccents(str) {
             if (!str) return '';
-            // normalize('NFD') separa letras e acentos, e o replace remove os caracteres de acentuação (diacríticos)
             return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
         }
 
@@ -354,14 +361,80 @@
             document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
             loadServerCSVData();
 
+            // Evento para criar tags quando o usuário digita uma vírgula
             searchInput.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                const term = e.target.value.toLowerCase();
-                searchTimeout = setTimeout(() => {
-                    renderData(term);
-                }, 300);
+                const val = e.target.value;
+                if (val.includes(',')) {
+                    const parts = val.split(',');
+                    // Todas as partes, exceto a última (após a última vírgula), viram tags
+                    for (let i = 0; i < parts.length - 1; i++) {
+                        const tagStr = parts[i].trim();
+                        if (tagStr && !activeTags.includes(tagStr)) {
+                            activeTags.push(tagStr);
+                        }
+                    }
+                    // A última parte volta para o input
+                    searchInput.value = parts[parts.length - 1].trimStart();
+                    updateTagsUI();
+                }
+                triggerSearchDebounce();
+            });
+
+            // Evento para criar tag ao pressionar Enter ou apagar com Backspace
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = searchInput.value.trim();
+                    if (val && !activeTags.includes(val)) {
+                        activeTags.push(val);
+                        searchInput.value = '';
+                        updateTagsUI();
+                        triggerSearchDebounce();
+                    }
+                } else if (e.key === 'Backspace' && searchInput.value === '' && activeTags.length > 0) {
+                    // Remove a última tag se o input estiver vazio e apertar Backspace
+                    activeTags.pop();
+                    updateTagsUI();
+                    triggerSearchDebounce();
+                }
             });
         });
+
+        function updateTagsUI() {
+            tagsContainer.innerHTML = '';
+            activeTags.forEach((tag, index) => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-palmeiras-light/10 text-palmeiras-dark dark:bg-palmeiras-light/20 dark:text-palmeiras-light border border-palmeiras-light/20 dark:border-palmeiras-light/30 shadow-sm';
+                tagEl.innerHTML = `
+                    ${tag}
+                    <button type="button" class="ml-1.5 inline-flex text-palmeiras-dark/50 hover:text-palmeiras-dark dark:text-palmeiras-light/60 dark:hover:text-palmeiras-light focus:outline-none" onclick="removeTag(${index})">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    </button>
+                `;
+                tagsContainer.appendChild(tagEl);
+            });
+            
+            if (activeTags.length > 0) {
+                searchInput.placeholder = "Adicionar...";
+            } else {
+                searchInput.placeholder = "Ex: Marcos, Arce, 1999...";
+            }
+        }
+
+        // Função chamada pelo botão "x" da tag
+        window.removeTag = function(index) {
+            activeTags.splice(index, 1);
+            updateTagsUI();
+            triggerSearchDebounce();
+            searchInput.focus();
+        };
+
+        function triggerSearchDebounce() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                renderData();
+            }, 300);
+        }
 
         function changeTab(tabName) {
             currentTab = tabName;
@@ -379,12 +452,11 @@
             });
             document.getElementById(`content-${tabName}`).classList.add('active');
 
-            renderData(searchInput.value.toLowerCase());
+            renderData();
         }
 
         function preprocessData(data) {
             return data.map(row => {
-                // Junta todo o conteúdo da linha em uma string, joga pra minúsculo e tira os acentos
                 const combinedStr = Object.values(row).join(' ').toLowerCase();
                 row._searchString = removeAccents(combinedStr);
                 return row;
@@ -404,7 +476,7 @@
                             allData = preprocessData(results.data);
                             document.getElementById('loading').style.display = 'none';
                             document.getElementById('app-content').classList.remove('hidden');
-                            renderData('');
+                            renderData();
                         },
                         error: function(error) { showError("Erro: " + error.message); }
                     });
@@ -429,7 +501,7 @@
                     allData = preprocessData(results.data);
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
-                    renderData(searchInput.value.toLowerCase());
+                    renderData();
                 },
                 error: function(error) {
                     showError("Erro: " + error.message);
@@ -489,16 +561,22 @@
             document.getElementById('stat-aproveitamento').innerText = aproveitamento.toFixed(2).replace('.', ',') + '%';
         }
 
-        function renderData(searchTerm) {
+        // A pesquisa agora usa a lista de tags ativas + o texto que estiver na caixa
+        function renderData() {
             if (allData.length === 0) return;
 
-            // Remove acentos do termo que o usuário acabou de digitar
-            const normalizedSearchTerm = removeAccents(searchTerm);
+            // Combina os termos das tags com o que estiver parcialmente digitado no input
+            let termsToSearch = [...activeTags];
+            const currentInput = searchInput.value.trim();
+            if (currentInput) {
+                termsToSearch.push(currentInput);
+            }
 
-            const searchTerms = normalizedSearchTerm.split(',').map(t => t.trim()).filter(t => t !== '');
+            // Normaliza (tira acento e bota em minúsculo) os termos
+            const searchTerms = termsToSearch.map(t => removeAccents(t.toLowerCase())).filter(t => t !== '');
+
             const filteredData = allData.filter(row => {
                 if (searchTerms.length === 0) return true;
-                // Compara os termos digitados sem acento com a string pré-processada (também sem acento) do CSV
                 return searchTerms.every(term => row._searchString.includes(term));
             });
 
