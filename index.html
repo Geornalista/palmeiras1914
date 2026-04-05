@@ -16,9 +16,19 @@
     <!-- PapaParse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-    <!-- Tailwind Config para cores do Palmeiras -->
+    <!-- Script inicial para prevenir "flash" do tema claro caso usuário prefira dark -->
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
+            darkMode: 'class', // Habilita o modo escuro por classe
             theme: {
                 extend: {
                     fontFamily: {
@@ -44,12 +54,14 @@
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
+            background: transparent; 
         }
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1; 
             border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8; 
@@ -72,35 +84,44 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Congelar primeira coluna da tabela de escalações no scroll horizontal */
+        /* Congelar primeira coluna da tabela de escalações */
         .sticky-col {
             position: sticky;
             left: 0;
-            background-color: white;
             z-index: 10;
+            /* box-shadow removido daqui para tratar no tailwind com cores dark mode */
             box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+        }
+        .dark .sticky-col {
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.5);
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased min-h-screen flex flex-col">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
 
     <!-- Header / Cabeçalho -->
-    <header class="bg-palmeiras-dark text-white shadow-lg relative overflow-hidden">
-        <!-- Padrão de fundo opcional (simulando marca d'água) -->
+    <header class="bg-palmeiras-dark dark:bg-gray-950 text-white shadow-lg relative overflow-hidden transition-colors duration-300 border-b border-palmeiras-gold/20">
+        <!-- Padrão de fundo opcional -->
         <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
         
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10">
+            <div class="flex flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- Escudo Simulado (Pode substituir pela imagem real) -->
-                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-palmeiras-dark font-bold text-xl border-2 border-palmeiras-gold shadow-md">
-                        P
+                    <!-- Escudo do Palmeiras via Wikimedia Commons -->
+                    <div class="w-14 h-14 bg-white/10 dark:bg-white/5 rounded-full p-1 flex items-center justify-center border-2 border-palmeiras-gold shadow-md shrink-0">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg" alt="Escudo do Palmeiras" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold tracking-tight text-white uppercase">Sociedade Esportiva Palmeiras</h1>
-                        <p class="text-palmeiras-gold font-medium text-sm">Histórico de Partidas e Escalações</p>
+                        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white uppercase leading-tight">Estatísticas do Palmeiras</h1>
+                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico de Partidas e Escalações</p>
                     </div>
                 </div>
+
+                <!-- Botão Toggle Dark Mode -->
+                <button id="theme-toggle" type="button" class="text-white hover:bg-white/20 dark:hover:bg-gray-800 rounded-full text-sm p-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-palmeiras-gold">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
             </div>
         </div>
     </header>
@@ -109,52 +130,52 @@
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
         <!-- Estado de Carregamento Inicial -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20 text-palmeiras-dark">
+        <div id="loading" class="flex flex-col items-center justify-center py-20 text-palmeiras-dark dark:text-palmeiras-light">
             <svg class="animate-spin h-10 w-10 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <p class="font-semibold text-lg animate-pulse">Carregando base de dados do servidor...</p>
+            <p class="font-semibold text-lg animate-pulse">Carregando base de dados...</p>
         </div>
 
-        <!-- Seção de Upload de Arquivo (Fallback para ambiente de visualização/local) -->
-        <div id="upload-section" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 text-center">
+        <!-- Seção de Upload de Arquivo (Fallback) -->
+        <div id="upload-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 text-center transition-colors">
             <div class="max-w-md mx-auto">
-                <svg class="mx-auto h-12 w-12 text-palmeiras-light mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Modo de Pré-visualização</h3>
-                <p class="text-sm text-gray-500 mb-6">O carregamento automático funciona no <strong>GitHub Pages</strong>. Para testar aqui no preview, selecione o arquivo manualmente.</p>
-                <label class="cursor-pointer bg-palmeiras-dark text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light transition-colors shadow-md inline-block">
-                    Selecionar arquivo palmeiras.csv
+                <svg class="mx-auto h-12 w-12 text-palmeiras-light dark:text-palmeiras-gold mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Modo de Pré-visualização</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o arquivo <strong>palmeiras.csv</strong> manualmente para prosseguir.</p>
+                <label class="cursor-pointer bg-palmeiras-dark dark:bg-palmeiras-light text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light dark:hover:bg-palmeiras-dark transition-colors shadow-md inline-block">
+                    Selecionar arquivo CSV
                     <input type="file" id="csvFileInput" accept=".csv" class="hidden">
                 </label>
             </div>
         </div>
 
         <!-- Mensagem de Erro -->
-        <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
+        <div id="error-message" class="hidden bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm text-red-700" id="error-text">Não foi possível carregar o arquivo CSV.</p>
+                    <p class="text-sm text-red-700 dark:text-red-400" id="error-text">Não foi possível carregar o arquivo CSV.</p>
                 </div>
             </div>
         </div>
 
-        <!-- CONTEÚDO DA APLICAÇÃO (Oculto até o upload automático finalizar) -->
+        <!-- CONTEÚDO DA APLICAÇÃO -->
         <div id="app-content" class="hidden">
             <!-- Controles e Abas -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
                     
                     <!-- Navegação de Abas -->
                     <nav class="flex space-x-1 sm:space-x-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar" aria-label="Tabs">
-                        <button onclick="changeTab('jogos')" id="tab-jogos" class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark text-white shadow-md transition-all">
+                        <button onclick="changeTab('jogos')" id="tab-jogos" class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all">
                             <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             Partidas
                         </button>
-                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes" class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 hover:text-palmeiras-dark hover:bg-palmeiras-bg transition-all">
+                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes" class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all">
                             <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             Escalações
                         </button>
@@ -163,60 +184,52 @@
                     <!-- Filtro / Busca -->
                     <div class="w-full lg:w-96 relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-shadow">
+                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-palmeiras-light focus:border-palmeiras-light sm:text-sm transition-colors">
                     </div>
                 </div>
             </div>
 
             <!-- PAINEL DE ESTATÍSTICAS CONSOLIDADAS -->
-            <div id="stats-container" class="hidden mb-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="bg-palmeiras-bg px-5 py-3 border-b border-palmeiras-light/30 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-palmeiras-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <h3 class="text-sm font-bold text-palmeiras-dark uppercase tracking-wide">Aproveitamento Consolidado da Busca</h3>
+            <div id="stats-container" class="hidden mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+                <div class="bg-palmeiras-bg dark:bg-palmeiras-dark/20 px-5 py-3 border-b border-palmeiras-light/30 dark:border-palmeiras-light/20 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-palmeiras-dark dark:text-palmeiras-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <h3 class="text-sm font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wide">Aproveitamento Consolidado da Busca</h3>
                 </div>
                 <div class="p-5">
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 text-center">
-                        <!-- Jogos -->
-                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Jogos</p>
-                            <p id="stat-jogos" class="text-xl font-black text-gray-800">-</p>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Jogos</p>
+                            <p id="stat-jogos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <!-- Vitorias -->
-                        <div class="bg-green-50 rounded-lg p-3 border border-green-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-green-700 uppercase font-bold tracking-wider mb-1">Vitórias</p>
-                            <p id="stat-vitorias" class="text-xl font-black text-green-700">-</p>
+                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border border-green-100 dark:border-green-800/50 flex flex-col justify-center">
+                            <p class="text-[10px] text-green-700 dark:text-green-400 uppercase font-bold tracking-wider mb-1">Vitórias</p>
+                            <p id="stat-vitorias" class="text-xl font-black text-green-700 dark:text-green-400">-</p>
                         </div>
-                        <!-- Empates -->
-                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-600 uppercase font-bold tracking-wider mb-1">Empates</p>
-                            <p id="stat-empates" class="text-xl font-black text-gray-700">-</p>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-600 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Empates</p>
+                            <p id="stat-empates" class="text-xl font-black text-gray-700 dark:text-gray-200">-</p>
                         </div>
-                        <!-- Derrotas -->
-                        <div class="bg-red-50 rounded-lg p-3 border border-red-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-red-700 uppercase font-bold tracking-wider mb-1">Derrotas</p>
-                            <p id="stat-derrotas" class="text-xl font-black text-red-600">-</p>
+                        <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border border-red-100 dark:border-red-800/50 flex flex-col justify-center">
+                            <p class="text-[10px] text-red-700 dark:text-red-400 uppercase font-bold tracking-wider mb-1">Derrotas</p>
+                            <p id="stat-derrotas" class="text-xl font-black text-red-600 dark:text-red-400">-</p>
                         </div>
-                        <!-- Gols Pró -->
-                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Gols Pró</p>
-                            <p id="stat-gols-pro" class="text-xl font-black text-gray-800">-</p>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Pró</p>
+                            <p id="stat-gols-pro" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <!-- Gols Sofridos -->
-                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Gols Sofr.</p>
-                            <p id="stat-gols-sofridos" class="text-xl font-black text-gray-800">-</p>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Sofr.</p>
+                            <p id="stat-gols-sofridos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <!-- Saldo -->
-                        <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Saldo</p>
-                            <p id="stat-saldo" class="text-xl font-black text-gray-800">-</p>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Saldo</p>
+                            <p id="stat-saldo" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <!-- Aproveitamento -->
-                        <div class="bg-palmeiras-dark rounded-lg p-3 border border-palmeiras-dark flex flex-col justify-center shadow-inner">
-                            <p class="text-[10px] text-palmeiras-gold uppercase font-bold tracking-wider mb-1">Aprov.</p>
+                        <div class="bg-palmeiras-dark dark:bg-palmeiras-light rounded-lg p-3 border border-palmeiras-dark dark:border-palmeiras-light flex flex-col justify-center shadow-inner">
+                            <p class="text-[10px] text-palmeiras-gold dark:text-white uppercase font-bold tracking-wider mb-1">Aprov.</p>
                             <p id="stat-aproveitamento" class="text-xl font-black text-white">-</p>
                         </div>
                     </div>
@@ -224,7 +237,7 @@
             </div>
 
             <!-- Aviso de Limite de Resultados (Performance) -->
-            <div id="limit-message" class="hidden text-sm text-yellow-800 mb-6 text-center font-medium bg-yellow-100 py-3 rounded-lg border border-yellow-200">
+            <div id="limit-message" class="hidden text-sm text-yellow-800 dark:text-yellow-200 mb-6 text-center font-medium bg-yellow-100 dark:bg-yellow-900/50 py-3 rounded-lg border border-yellow-200 dark:border-yellow-700/50">
                 Muitos resultados encontrados! Mostrando os 150 primeiros na tabela. Continue digitando para refinar.
             </div>
 
@@ -237,20 +250,20 @@
                 </div>
 
                 <!-- Visão Desktop/Tablet (Tabela) -->
-                <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Data</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Campeonato</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Mandante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Placar</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Visitante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Detalhes</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Campeonato</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mandante</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Placar</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Visitante</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Detalhes</th>
                                 </tr>
                             </thead>
-                            <tbody id="desktop-jogos-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="desktop-jogos-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Preenchido via JS -->
                             </tbody>
                         </table>
@@ -258,30 +271,29 @@
                 </div>
                 
                 <!-- Sem resultados -->
-                <div id="no-results-jogos" class="hidden py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm mt-4">
+                <div id="no-results-jogos" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
                     <p class="text-lg">Nenhuma partida encontrada para a busca.</p>
                 </div>
             </div>
 
             <!-- ABA 2: ESCALAÇÕES -->
             <div id="content-escalacoes" class="tab-content">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
-                    <!-- Tabela de escalações precisa sempre rolar horizontalmente devido a muitas colunas -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden relative transition-colors">
                     <div class="overflow-x-auto max-h-[70vh]">
-                        <table class="min-w-full divide-y divide-gray-200 relative">
-                            <thead class="bg-gray-50 sticky top-0 z-20">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 relative">
+                            <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-20">
                                 <tr id="escalacoes-header">
                                     <!-- Preenchido via JS -->
                                 </tr>
                             </thead>
-                            <tbody id="escalacoes-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="escalacoes-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Preenchido via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
                 <!-- Sem resultados -->
-                <div id="no-results-escalacoes" class="hidden py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm mt-4">
+                <div id="no-results-escalacoes" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
                     <p class="text-lg">Nenhuma escalação encontrada para a busca.</p>
                 </div>
             </div>
@@ -290,102 +302,101 @@
     </main>
 
     <script>
+        // Lógica do Dark Mode Toggle
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Configuração inicial dos ícones baseado na classe atual
+        if (document.documentElement.classList.contains('dark')) {
+            lightIcon.classList.remove('hidden');
+        } else {
+            darkIcon.classList.remove('hidden');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+
         // Variáveis Globais
         let allData = [];
         let currentTab = 'jogos';
-        let searchTimeout; // Variável para o Debounce
+        let searchTimeout;
         
         const searchInput = document.getElementById('searchInput');
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', () => {
-            // Evento para caso precise usar o botão de fallback
             document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
-            
-            // Inicia o carregamento automático do arquivo do servidor
             loadServerCSVData();
 
-            // Evento de Busca com Debounce (evita travamento ao digitar rápido)
             searchInput.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout); // Limpa o timer anterior
+                clearTimeout(searchTimeout);
                 const term = e.target.value.toLowerCase();
-                
-                // Aguarda 300ms após parar de digitar para atualizar a tela
                 searchTimeout = setTimeout(() => {
                     renderData(term);
                 }, 300);
             });
         });
 
-        // Alternar Abas
         function changeTab(tabName) {
             currentTab = tabName;
             
-            // Atualizar Botões
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 if (btn.id === `tab-${tabName}`) {
-                    btn.className = 'tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark text-white shadow-md transition-all';
+                    btn.className = 'tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all';
                 } else {
-                    btn.className = 'tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 hover:text-palmeiras-dark hover:bg-palmeiras-bg transition-all';
+                    btn.className = 'tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all';
                 }
             });
 
-            // Atualizar Conteúdo
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
             document.getElementById(`content-${tabName}`).classList.add('active');
 
-            // Renderizar novamente de acordo com o termo da busca atual
             renderData(searchInput.value.toLowerCase());
         }
 
-        // Preparar os dados logo ao carregar (pré-processamento da busca)
         function preprocessData(data) {
             return data.map(row => {
-                // Cria uma propriedade oculta com todo o texto da linha. 
-                // Isso deixa a pesquisa muito mais rápida!
                 row._searchString = Object.values(row).join(' ').toLowerCase();
                 return row;
             });
         }
 
-        // Função para baixar o arquivo automaticamente do servidor usando fetch API
         function loadServerCSVData() {
             fetch('palmeiras.csv')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Arquivo não encontrado (Status: ${response.status})`);
-                    }
+                    if (!response.ok) throw new Error(`Status: ${response.status}`);
                     return response.text();
                 })
                 .then(csvText => {
                     Papa.parse(csvText, {
-                        header: true,
-                        delimiter: ";", 
-                        skipEmptyLines: true,
+                        header: true, delimiter: ";", skipEmptyLines: true,
                         complete: function(results) {
-                            // Pré-processa os dados assim que chegam
                             allData = preprocessData(results.data);
-                            
                             document.getElementById('loading').style.display = 'none';
                             document.getElementById('app-content').classList.remove('hidden');
-                            
                             renderData('');
                         },
-                        error: function(error) {
-                            showError("Erro ao processar o CSV: " + error.message);
-                        }
+                        error: function(error) { showError("Erro: " + error.message); }
                     });
                 })
                 .catch(error => {
-                    console.warn("Auto-load falhou. Mostrando fallback de upload manual.", error);
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('upload-section').style.display = 'block';
                 });
         }
 
-        // Função para ler o CSV via botão de upload (Fallback)
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -395,20 +406,15 @@
             document.getElementById('loading').style.display = 'flex';
             
             Papa.parse(file, {
-                header: true,
-                delimiter: ";",
-                skipEmptyLines: true,
+                header: true, delimiter: ";", skipEmptyLines: true,
                 complete: function(results) {
-                    // Pré-processa os dados assim que chegam
                     allData = preprocessData(results.data);
-                    
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
-                    
                     renderData(searchInput.value.toLowerCase());
                 },
                 error: function(error) {
-                    showError("Erro ao ler o arquivo selecionado: " + error.message);
+                    showError("Erro: " + error.message);
                     document.getElementById('upload-section').style.display = 'block';
                 }
             });
@@ -421,62 +427,40 @@
             document.getElementById('error-text').innerText = msg;
         }
 
-        // Calcula as Estatísticas de Aproveitamento baseadas nos dados filtrados
         function calcularEstatisticas(data) {
             const statsContainer = document.getElementById('stats-container');
-            
             if (data.length === 0) {
                 statsContainer.classList.add('hidden');
                 return;
             }
 
-            let jogosRealizados = 0;
-            let vitorias = 0;
-            let empates = 0;
-            let derrotas = 0;
-            let golsPro = 0;
-            let golsSofridos = 0;
+            let jogosRealizados = 0; let vitorias = 0; let empates = 0; let derrotas = 0;
+            let golsPro = 0; let golsSofridos = 0;
 
             data.forEach(row => {
                 const isMandante = isPalmeiras(row['Mandante']);
                 const isVisitante = isPalmeiras(row['Visitante']);
-                
-                // Ignora se não for jogo do Palmeiras por algum motivo na base
                 if (!isMandante && !isVisitante) return;
 
-                // Tenta transformar em número. Jogos que ainda não aconteceram ou W.O sem placar podem falhar aqui
                 const golH = parseInt(row['GOLS_H']);
                 const golA = parseInt(row['GOLS_A']);
 
-                // Só processa se houver resultado válido (número)
                 if (!isNaN(golH) && !isNaN(golA)) {
                     jogosRealizados++;
-                    
                     if (isMandante) {
-                        golsPro += golH;
-                        golsSofridos += golA;
-                        if (golH > golA) vitorias++;
-                        else if (golH === golA) empates++;
-                        else derrotas++;
-                    } else { // é visitante
-                        golsPro += golA;
-                        golsSofridos += golH;
-                        if (golA > golH) vitorias++;
-                        else if (golA === golH) empates++;
-                        else derrotas++;
+                        golsPro += golH; golsSofridos += golA;
+                        if (golH > golA) vitorias++; else if (golH === golA) empates++; else derrotas++;
+                    } else {
+                        golsPro += golA; golsSofridos += golH;
+                        if (golA > golH) vitorias++; else if (golA === golH) empates++; else derrotas++;
                     }
                 }
             });
 
-            // Mostra o painel
             statsContainer.classList.remove('hidden');
-
             const saldo = golsPro - golsSofridos;
-            // Cálculo do aproveitamento: (pontos ganhos / pontos possíveis) * 100
-            // Cada vitória vale 3, empate vale 1. Pontos possíveis = jogos * 3
             const aproveitamento = jogosRealizados > 0 ? (((vitorias * 3) + empates) / (jogosRealizados * 3)) * 100 : 0;
 
-            // Renderiza os valores na interface
             document.getElementById('stat-jogos').innerText = jogosRealizados;
             document.getElementById('stat-vitorias').innerText = vitorias;
             document.getElementById('stat-empates').innerText = empates;
@@ -487,37 +471,27 @@
             document.getElementById('stat-aproveitamento').innerText = aproveitamento.toFixed(2).replace('.', ',') + '%';
         }
 
-        // Função principal de renderização
         function renderData(searchTerm) {
             if (allData.length === 0) return;
 
-            // Divide os termos por vírgula, remove espaços vazios nas extremidades e ignora termos em branco
             const searchTerms = searchTerm.split(',').map(t => t.trim()).filter(t => t !== '');
-
-            // Filtragem Ultrarrápida com múltiplos termos
             const filteredData = allData.filter(row => {
-                if (searchTerms.length === 0) return true; // Se a busca estiver vazia, retorna tudo
-                
-                // A linha só passa no filtro se TODOS os termos digitados estiverem contidos nela
+                if (searchTerms.length === 0) return true;
                 return searchTerms.every(term => row._searchString.includes(term));
             });
 
-            // ATUALIZA O PAINEL DE ESTATÍSTICAS COM TODOS OS RESULTADOS (antes de cortar)
             calcularEstatisticas(filteredData);
 
-            // LIMITE DE EXIBIÇÃO: Impede o navegador de travar protegendo o DOM
             const limitMessage = document.getElementById('limit-message');
             let dataToRender = filteredData;
             
             if (filteredData.length > 150) {
-                // Pega apenas os primeiros 150 itens e mostra a mensagem
                 dataToRender = filteredData.slice(0, 150);
                 limitMessage.classList.remove('hidden');
             } else {
                 limitMessage.classList.add('hidden');
             }
 
-            // Manda renderizar apenas o lote limitado na tabela
             if (currentTab === 'jogos') {
                 renderJogos(dataToRender);
             } else if (currentTab === 'escalacoes') {
@@ -525,20 +499,17 @@
             }
         }
 
-        // Verifica se é o Palmeiras para destacar
         function isPalmeiras(teamName) {
             if(!teamName) return false;
             return teamName.toLowerCase().includes('palmeiras') || teamName.toLowerCase().includes('palestra');
         }
 
-        // Renderizar Aba "Jogos"
         function renderJogos(data) {
             const desktopBody = document.getElementById('desktop-jogos-body');
             const mobileContainer = document.getElementById('mobile-jogos-container');
             const noResults = document.getElementById('no-results-jogos');
             
-            desktopBody.innerHTML = '';
-            mobileContainer.innerHTML = '';
+            desktopBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
             if (data.length === 0) {
                 noResults.classList.remove('hidden');
@@ -567,52 +538,50 @@
                 const isMandanteVerdao = isPalmeiras(mandante);
                 const isVisitanteVerdao = isPalmeiras(visitante);
 
-                const mandanteClass = isMandanteVerdao ? 'font-bold text-palmeiras-dark' : 'text-gray-700';
-                const visitanteClass = isVisitanteVerdao ? 'font-bold text-palmeiras-dark' : 'text-gray-700';
+                const mandanteClass = isMandanteVerdao ? 'font-bold text-palmeiras-dark dark:text-palmeiras-light' : 'text-gray-700 dark:text-gray-300';
+                const visitanteClass = isVisitanteVerdao ? 'font-bold text-palmeiras-dark dark:text-palmeiras-light' : 'text-gray-700 dark:text-gray-300';
 
-                // Desktop Row
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
+                tr.className = 'hover:bg-palmeiras-bg dark:hover:bg-palmeiras-dark/20 transition-colors duration-150';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${dataJogo}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${camp}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${dataJogo}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${camp}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right ${mandanteClass}">${mandante}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-800">
-                            ${golM} <span class="mx-2 text-gray-400 font-normal">x</span> ${golV}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white">
+                            ${golM} <span class="mx-2 text-gray-400 dark:text-gray-500 font-normal">x</span> ${golV}
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm ${visitanteClass}">${visitante}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light hover:text-palmeiras-dark transition-colors inline-flex items-center gap-1" title="Ver Detalhes">
+                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light dark:text-palmeiras-gold hover:text-palmeiras-dark dark:hover:text-white transition-colors inline-flex items-center gap-1" title="Ver Detalhes">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                         </a>` : '-'}
                     </td>
                 `;
                 desktopFragment.appendChild(tr);
 
-                // Mobile Card
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg border border-gray-200 p-4 shadow-sm relative overflow-hidden';
+                card.className = 'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm relative overflow-hidden transition-colors';
                 card.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-palmeiras-light"></div>
-                    <div class="flex justify-between items-center mb-2 text-xs text-gray-500 pl-2">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-palmeiras-light dark:bg-palmeiras-gold"></div>
+                    <div class="flex justify-between items-center mb-2 text-xs text-gray-500 dark:text-gray-400 pl-2">
                         <span><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dataJogo}</span>
-                        <span class="truncate ml-2 max-w-[120px] font-medium text-palmeiras-dark">${camp}</span>
+                        <span class="truncate ml-2 max-w-[120px] font-medium text-palmeiras-dark dark:text-palmeiras-light">${camp}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 pl-2">
                         <div class="flex-1 text-right pr-2 text-sm ${mandanteClass} truncate" title="${mandante}">${mandante}</div>
-                        <div class="px-3 py-1 bg-gray-100 rounded-md font-bold text-gray-800 text-sm shadow-inner shrink-0">
-                            ${golM} <span class="text-gray-400 font-normal mx-1">x</span> ${golV}
+                        <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-md font-bold text-gray-800 dark:text-white text-sm shadow-inner shrink-0">
+                            ${golM} <span class="text-gray-400 dark:text-gray-500 font-normal mx-1">x</span> ${golV}
                         </div>
                         <div class="flex-1 text-left pl-2 text-sm ${visitanteClass} truncate" title="${visitante}">${visitante}</div>
                     </div>
-                    <div class="flex justify-between items-center mt-2 text-xs text-gray-400 pl-2 border-t border-gray-100 pt-2">
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-400 dark:text-gray-500 pl-2 border-t border-gray-100 dark:border-gray-700 pt-2">
                         <span class="truncate flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                             ${est}
                         </span>
-                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light font-semibold ml-2">Ver Jogo &rarr;</a>` : ''}
+                        ${link ? `<a href="${link}" target="_blank" class="text-palmeiras-light dark:text-palmeiras-gold font-semibold ml-2">Ver Jogo &rarr;</a>` : ''}
                     </div>
                 `;
                 mobileFragment.appendChild(card);
@@ -622,14 +591,12 @@
             mobileContainer.appendChild(mobileFragment);
         }
 
-        // Renderizar Aba "Escalações"
         function renderEscalacoes(data) {
             const header = document.getElementById('escalacoes-header');
             const body = document.getElementById('escalacoes-body');
             const noResults = document.getElementById('no-results-escalacoes');
 
-            header.innerHTML = '';
-            body.innerHTML = '';
+            header.innerHTML = ''; body.innerHTML = '';
 
             if (data.length === 0) {
                 noResults.classList.remove('hidden');
@@ -642,93 +609,63 @@
 
             let maxFieldPlayers = 0;
             
-            // Passo 1: Processa e sanitiza as linhas para separar os jogadores do técnico
             const processedRows = data.map(row => {
-                // Pega todas as chaves dinâmicas que começam com 'jog' (ignorando maiúsculas/minúsculas)
-                // e garante que a numeração vai da ordem certa (Jog1, Jog2, etc)
-                const jogKeys = Object.keys(row)
-                    .filter(k => k.toLowerCase().startsWith('jog'))
-                    .sort((a, b) => {
-                        const numA = parseInt(a.replace(/\D/g, '')) || 0;
-                        const numB = parseInt(b.replace(/\D/g, '')) || 0;
-                        return numA - numB;
-                    });
+                const jogKeys = Object.keys(row).filter(k => k.toLowerCase().startsWith('jog')).sort((a, b) => (parseInt(a.replace(/\D/g, '')) || 0) - (parseInt(b.replace(/\D/g, '')) || 0));
                 
                 const players = [];
-                // Empilha todos os preenchidos, pulando células vazias (para não gerar colunas sem nada no meio da tabela)
                 jogKeys.forEach(k => {
                     const val = row[k] ? row[k].trim() : '';
-                    if (val && val !== '-') {
-                        players.push(val);
-                    }
+                    if (val && val !== '-') players.push(val);
                 });
                 
                 let tecnico = '-';
-                // O ÚLTIMO nome preenchido dessa lista de jogadores é o técnico (como solicitado)
-                if (players.length > 0) {
-                    tecnico = players.pop(); 
-                }
-                
-                // Grava o tamanho máximo para sabermos até qual número vai a coluna 'Jogador X'
+                if (players.length > 0) tecnico = players.pop(); 
                 maxFieldPlayers = Math.max(maxFieldPlayers, players.length);
                 
-                // Tenta achar a chave exata para o goleiro independente de como foi digitada no CSV
                 const goleiroKey = Object.keys(row).find(k => k.toLowerCase() === 'goleiro');
                 const goleiroNome = goleiroKey && row[goleiroKey] ? row[goleiroKey].trim() : '-';
 
-                return {
-                    original: row,
-                    players: players,
-                    tecnico: tecnico,
-                    goleiro: goleiroNome
-                };
+                return { original: row, players: players, tecnico: tecnico, goleiro: goleiroNome };
             });
 
-            // Passo 2: Montar Cabeçalho Limpo e Dinâmico
             let theadHTML = `
-                <th scope="col" class="sticky-col px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider z-30">Partida (Adversário)</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Goleiro</th>
+                <th scope="col" class="sticky-col bg-gray-50 dark:bg-gray-900 px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider z-30">Partida (Adversário)</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Goleiro</th>
             `;
             
-            // Cria os cabeçalhos de linha
             for (let i = 1; i <= maxFieldPlayers; i++) {
-                theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Jogador ${i}</th>`;
+                theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Jogador ${i}</th>`;
             }
             
-            // Coluna do Técnico no final
-            theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-palmeiras-dark uppercase tracking-wider whitespace-nowrap bg-palmeiras-light/10">Técnico</th>`;
-            
+            theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wider whitespace-nowrap bg-palmeiras-light/10 dark:bg-palmeiras-light/20">Técnico</th>`;
             header.innerHTML = theadHTML;
 
-            // Passo 3: Montar Corpo da Tabela
             const fragment = document.createDocumentFragment();
 
             processedRows.forEach(pRow => {
                 const row = pRow.original;
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-palmeiras-bg transition-colors duration-150';
+                tr.className = 'hover:bg-palmeiras-bg dark:hover:bg-palmeiras-dark/20 transition-colors duration-150';
 
                 const dataJogo = row['Data'] || '';
                 const adversario = isPalmeiras(row['Mandante']) ? row['Visitante'] : row['Mandante'];
                 
                 let tdHTML = `
-                    <td class="sticky-col px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200">
-                        <div class="text-xs text-gray-500">${dataJogo}</div>
-                        <div class="text-palmeiras-dark">${adversario}</div>
+                    <td class="sticky-col bg-white dark:bg-gray-800 px-4 py-3 whitespace-nowrap text-sm font-medium border-r border-gray-200 dark:border-gray-700 transition-colors">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${dataJogo}</div>
+                        <div class="text-palmeiras-dark dark:text-palmeiras-light">${adversario}</div>
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800">${pRow.goleiro}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">${pRow.goleiro}</td>
                 `;
 
-                // Preenche as colunas até o máximo necessário
                 for (let i = 0; i < maxFieldPlayers; i++) {
                     const player = pRow.players[i] || '-';
-                    const textColor = player !== '-' ? 'text-gray-800' : 'text-gray-300';
+                    const textColor = player !== '-' ? 'text-gray-800 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600';
                     tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${textColor}">${player}</td>`;
                 }
 
-                // E por fim a célula do Técnico com um leve fundo para destacar
-                const tecColor = pRow.tecnico !== '-' ? 'text-palmeiras-dark font-semibold' : 'text-gray-300';
-                tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${tecColor} bg-palmeiras-light/5">${pRow.tecnico}</td>`;
+                const tecColor = pRow.tecnico !== '-' ? 'text-palmeiras-dark dark:text-palmeiras-gold font-semibold' : 'text-gray-300 dark:text-gray-600';
+                tdHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm ${tecColor} bg-palmeiras-light/5 dark:bg-palmeiras-light/10">${pRow.tecnico}</td>`;
 
                 tr.innerHTML = tdHTML;
                 fragment.appendChild(tr);
