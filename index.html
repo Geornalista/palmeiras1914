@@ -122,7 +122,7 @@
                     </div>
                     <div>
                         <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white uppercase leading-tight">Estatísticas do Palmeiras</h1>
-                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico - Partidas - Escalações</p>
+                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico de Partidas e Escalações</p>
                     </div>
                 </div>
 
@@ -601,8 +601,12 @@
 
         function isPalmeiras(teamName) {
             if(!teamName) return false;
-            const name = teamName.toLowerCase().trim();
-            return name === 'palmeiras' || name === 'palestra italia' || name === 'palestra itália';
+            // Removemos acentos e espaços extras para garantir a precisão
+            const name = removeAccents(teamName.toLowerCase().trim());
+            // Aceita apenas os nomes oficiais da história do clube
+            return name === 'palmeiras' || 
+                   name === 'palestra italia' || 
+                   name === 'palestra de sao paulo';
         }
 
         function renderJogos(data) {
