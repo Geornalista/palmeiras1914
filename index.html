@@ -575,9 +575,16 @@
             // Normaliza (tira acento e bota em minúsculo) os termos
             const searchTerms = termsToSearch.map(t => removeAccents(t.toLowerCase())).filter(t => t !== '');
 
+            // Prepara expressões regulares para cada termo exigindo que combinem com o INÍCIO de uma palavra (\b)
+            const searchRegexes = searchTerms.map(term => {
+                const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escapa caracteres especiais
+                return new RegExp('\\b' + escapedTerm); // \b é a fronteira de palavra (word boundary)
+            });
+
             const filteredData = allData.filter(row => {
-                if (searchTerms.length === 0) return true;
-                return searchTerms.every(term => row._searchString.includes(term));
+                if (searchRegexes.length === 0) return true;
+                // Testa se a expressão regular é satisfeita (evita que "cafu" ache "tocafundo")
+                return searchRegexes.every(regex => regex.test(row._searchString));
             });
 
             calcularEstatisticas(filteredData);
