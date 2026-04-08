@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Estatísticas do Palmeiras</title>
-    
+
     <!-- PWA / Mobile Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#006437">
@@ -19,10 +20,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- PapaParse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
@@ -63,18 +64,22 @@
             width: 8px;
             height: 8px;
         }
+
         ::-webkit-scrollbar-track {
-            background: transparent; 
+            background: transparent;
         }
+
         ::-webkit-scrollbar-thumb {
-            background: #c1c1c1; 
+            background: #c1c1c1;
             border-radius: 4px;
         }
+
         .dark ::-webkit-scrollbar-thumb {
-            background: #4b5563; 
+            background: #4b5563;
         }
+
         ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8; 
+            background: #a8a8a8;
         }
 
         /* Efeitos de Transição para as Abas */
@@ -83,15 +88,23 @@
             opacity: 0;
             transition: opacity 0.15s ease-in-out;
         }
+
         .tab-content.active {
             display: block;
             opacity: 1;
             animation: fadeIn 0.15s ease-out;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(2px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(2px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Congelar primeira coluna da tabela de escalações */
@@ -99,37 +112,56 @@
             position: sticky;
             left: 0;
             z-index: 10;
-            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
         }
+
         .dark .sticky-col {
-            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.5);
+            box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased min-h-screen flex flex-col transition-colors duration-300">
 
     <!-- Header / Cabeçalho -->
-    <header class="bg-palmeiras-dark dark:bg-gray-950 text-white shadow-lg relative overflow-hidden transition-colors duration-300 border-b border-palmeiras-gold/20">
+    <header
+        class="bg-palmeiras-dark dark:bg-gray-950 text-white shadow-lg relative overflow-hidden transition-colors duration-300 border-b border-palmeiras-gold/20">
         <!-- Padrão de fundo opcional -->
-        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
-        
+        <div class="absolute inset-0 opacity-10 pointer-events-none"
+            style="background-image: radial-gradient(circle at center, #ffffff 1px, transparent 1px); background-size: 20px 20px;">
+        </div>
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10">
             <div class="flex flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4">
                     <!-- Escudo do Palmeiras via Wikimedia Commons -->
-                    <div class="w-14 h-14 bg-white/10 dark:bg-white/5 rounded-full p-1 flex items-center justify-center border-2 border-palmeiras-gold shadow-md shrink-0">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg" alt="Escudo do Palmeiras" class="w-full h-full object-contain drop-shadow-md">
+                    <div
+                        class="w-14 h-14 bg-white/10 dark:bg-white/5 rounded-full p-1 flex items-center justify-center border-2 border-palmeiras-gold shadow-md shrink-0">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/10/Palmeiras_logo.svg"
+                            alt="Escudo do Palmeiras" class="w-full h-full object-contain drop-shadow-md">
                     </div>
                     <div>
-                        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white uppercase leading-tight">Estatísticas do Palmeiras</h1>
-                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico de Partidas e Escalações</p>
+                        <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white uppercase leading-tight">
+                            Estatísticas do Palmeiras</h1>
+                        <p class="text-palmeiras-gold font-medium text-xs md:text-sm">Histórico de Partidas e Escalações
+                        </p>
                     </div>
                 </div>
 
                 <!-- Botão Toggle Dark Mode -->
-                <button id="theme-toggle" type="button" class="text-white hover:bg-white/20 dark:hover:bg-gray-800 rounded-full text-sm p-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-palmeiras-gold">
-                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                <button id="theme-toggle" type="button"
+                    class="text-white hover:bg-white/20 dark:hover:bg-gray-800 rounded-full text-sm p-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-palmeiras-gold">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                    </svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            fill-rule="evenodd" clip-rule="evenodd"></path>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -139,21 +171,32 @@
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
         <!-- Estado de Carregamento Inicial -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20 text-palmeiras-dark dark:text-palmeiras-light">
+        <div id="loading"
+            class="flex flex-col items-center justify-center py-20 text-palmeiras-dark dark:text-palmeiras-light">
             <svg class="animate-spin h-10 w-10 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
             </svg>
             <p class="font-semibold text-lg animate-pulse">Carregando base de dados...</p>
         </div>
 
         <!-- Seção de Upload de Arquivo (Fallback) -->
-        <div id="upload-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 text-center transition-colors">
+        <div id="upload-section"
+            class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 text-center transition-colors">
             <div class="max-w-md mx-auto">
-                <svg class="mx-auto h-12 w-12 text-palmeiras-light dark:text-palmeiras-gold mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <svg class="mx-auto h-12 w-12 text-palmeiras-light dark:text-palmeiras-gold mb-4" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Modo de Pré-visualização</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o arquivo <strong>palmeiras.csv</strong> manualmente para prosseguir.</p>
-                <label class="cursor-pointer bg-palmeiras-dark dark:bg-palmeiras-light text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light dark:hover:bg-palmeiras-dark transition-colors shadow-md inline-block">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o arquivo
+                    <strong>palmeiras.csv</strong> manualmente para prosseguir.</p>
+                <label
+                    class="cursor-pointer bg-palmeiras-dark dark:bg-palmeiras-light text-white px-6 py-3 rounded-lg font-medium hover:bg-palmeiras-light dark:hover:bg-palmeiras-dark transition-colors shadow-md inline-block">
                     Selecionar arquivo CSV
                     <input type="file" id="csvFileInput" accept=".csv" class="hidden">
                 </label>
@@ -161,13 +204,19 @@
         </div>
 
         <!-- Mensagem de Erro -->
-        <div id="error-message" class="hidden bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
+        <div id="error-message"
+            class="hidden bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                    <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clip-rule="evenodd"></path>
+                    </svg>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm text-red-700 dark:text-red-400" id="error-text">Não foi possível carregar o arquivo CSV.</p>
+                    <p class="text-sm text-red-700 dark:text-red-400" id="error-text">Não foi possível carregar o
+                        arquivo CSV.</p>
                 </div>
             </div>
         </div>
@@ -175,77 +224,131 @@
         <!-- CONTEÚDO DA APLICAÇÃO -->
         <div id="app-content" class="hidden">
             <!-- Controles e Abas -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
+            <div
+                class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 transition-colors">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                    
+
                     <!-- Navegação de Abas -->
-                    <nav class="flex space-x-1 sm:space-x-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar" aria-label="Tabs">
-                        <button onclick="changeTab('jogos')" id="tab-jogos" class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all">
-                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <nav class="flex space-x-1 sm:space-x-4 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar"
+                        aria-label="Tabs">
+                        <button onclick="changeTab('jogos')" id="tab-jogos"
+                            class="tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all">
+                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
                             Partidas
                         </button>
-                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes" class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all">
-                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <button onclick="changeTab('escalacoes')" id="tab-escalacoes"
+                            class="tab-btn shrink-0 px-4 py-2 font-semibold text-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-palmeiras-dark dark:hover:text-white hover:bg-palmeiras-bg dark:hover:bg-gray-700 transition-all">
+                            <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                </path>
+                            </svg>
                             Escalações
                         </button>
                     </nav>
 
                     <!-- Filtro / Busca com Suporte a Tags -->
                     <div class="w-full lg:w-[28rem] xl:w-[32rem] relative">
-                        <div id="searchContainer" class="flex flex-wrap items-center w-full min-h-[42px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 px-2 py-1 transition-colors focus-within:ring-2 focus-within:ring-palmeiras-light focus-within:border-palmeiras-light cursor-text" onclick="document.getElementById('searchInput').focus()">
+                        <div id="searchContainer"
+                            class="flex flex-wrap items-center w-full min-h-[42px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 px-2 py-1 transition-colors focus-within:ring-2 focus-within:ring-palmeiras-light focus-within:border-palmeiras-light cursor-text"
+                            onclick="document.getElementById('searchInput').focus()">
                             <div class="flex items-center justify-center pl-1 pr-2 pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
                             </div>
                             <!-- Container onde as tags/pílulas serão inseridas -->
-                            <div id="tags-container" class="flex flex-wrap gap-1.5 items-center empty:hidden ml-1"></div>
-                            
+                            <div id="tags-container" class="flex flex-wrap gap-1.5 items-center empty:hidden ml-1">
+                            </div>
+
                             <!-- Input invisível -->
-                            <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..." 
+                            <input type="text" id="searchInput" placeholder="Ex: Marcos, Arce, 1999..."
                                 class="flex-grow min-w-[120px] bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none py-1 px-1 sm:text-sm">
                         </div>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ml-1">Use vírgula (,) ou Enter para adicionar um termo.</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 ml-1">Use vírgula (,) ou Enter para
+                            adicionar um termo.</p>
                     </div>
                 </div>
             </div>
 
             <!-- PAINEL DE ESTATÍSTICAS CONSOLIDADAS -->
-            <div id="stats-container" class="hidden mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-                <div class="bg-palmeiras-bg dark:bg-palmeiras-dark/20 px-5 py-3 border-b border-palmeiras-light/30 dark:border-palmeiras-light/20 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-palmeiras-dark dark:text-palmeiras-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <h3 class="text-sm font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wide">Aproveitamento Consolidado da Busca</h3>
+            <div id="stats-container"
+                class="hidden mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+                <div
+                    class="bg-palmeiras-bg dark:bg-palmeiras-dark/20 px-5 py-3 border-b border-palmeiras-light/30 dark:border-palmeiras-light/20 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-palmeiras-dark dark:text-palmeiras-light" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                    <h3 class="text-sm font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wide">
+                        Aproveitamento Consolidado da Busca</h3>
                 </div>
                 <div class="p-5">
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 text-center">
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Jogos</p>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">
+                                Jogos</p>
                             <p id="stat-jogos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border border-green-100 dark:border-green-800/50 flex flex-col justify-center">
-                            <p class="text-[10px] text-green-700 dark:text-green-400 uppercase font-bold tracking-wider mb-1">Vitórias</p>
+                        <div
+                            class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 border border-green-100 dark:border-green-800/50 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-green-700 dark:text-green-400 uppercase font-bold tracking-wider mb-1">
+                                Vitórias</p>
                             <p id="stat-vitorias" class="text-xl font-black text-green-700 dark:text-green-400">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-600 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Empates</p>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-gray-600 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">
+                                Empates</p>
                             <p id="stat-empates" class="text-xl font-black text-gray-700 dark:text-gray-200">-</p>
                         </div>
-                        <div class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border border-red-100 dark:border-red-800/50 flex flex-col justify-center">
-                            <p class="text-[10px] text-red-700 dark:text-red-400 uppercase font-bold tracking-wider mb-1">Derrotas</p>
+                        <div
+                            class="bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border border-red-100 dark:border-red-800/50 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-red-700 dark:text-red-400 uppercase font-bold tracking-wider mb-1">
+                                Derrotas</p>
                             <p id="stat-derrotas" class="text-xl font-black text-red-600 dark:text-red-400">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Pró</p>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">
+                                Gols Pró</p>
                             <p id="stat-gols-pro" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Gols Sofr.</p>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">
+                                Gols Sofr.</p>
                             <p id="stat-gols-sofridos" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">Saldo</p>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-100 dark:border-gray-600 flex flex-col justify-center">
+                            <p
+                                class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-1">
+                                Saldo</p>
                             <p id="stat-saldo" class="text-xl font-black text-gray-800 dark:text-white">-</p>
                         </div>
-                        <div class="bg-palmeiras-dark dark:bg-palmeiras-light rounded-lg p-3 border border-palmeiras-dark dark:border-palmeiras-light flex flex-col justify-center shadow-inner">
-                            <p class="text-[10px] text-palmeiras-gold dark:text-white uppercase font-bold tracking-wider mb-1">Aprov.</p>
+                        <div
+                            class="bg-palmeiras-dark dark:bg-palmeiras-light rounded-lg p-3 border border-palmeiras-dark dark:border-palmeiras-light flex flex-col justify-center shadow-inner">
+                            <p
+                                class="text-[10px] text-palmeiras-gold dark:text-white uppercase font-bold tracking-wider mb-1">
+                                Aprov.</p>
                             <p id="stat-aproveitamento" class="text-xl font-black text-white">-</p>
                         </div>
                     </div>
@@ -253,48 +356,68 @@
             </div>
 
             <!-- Aviso de Limite de Resultados (Performance) -->
-            <div id="limit-message" class="hidden text-sm text-yellow-800 dark:text-yellow-200 mb-6 text-center font-medium bg-yellow-100 dark:bg-yellow-900/50 py-3 rounded-lg border border-yellow-200 dark:border-yellow-700/50">
+            <div id="limit-message"
+                class="hidden text-sm text-yellow-800 dark:text-yellow-200 mb-6 text-center font-medium bg-yellow-100 dark:bg-yellow-900/50 py-3 rounded-lg border border-yellow-200 dark:border-yellow-700/50">
                 Muitos resultados encontrados! Mostrando os 150 primeiros na tabela. Continue digitando para refinar.
             </div>
 
             <!-- ABA 1: JOGOS -->
             <div id="content-jogos" class="tab-content active">
-                
+
                 <!-- Visão Mobile (Cards) -->
                 <div id="mobile-jogos-container" class="grid grid-cols-1 gap-4 md:hidden">
                     <!-- Preenchido via JS -->
                 </div>
 
                 <!-- Visão Desktop/Tablet (Tabela) -->
-                <div class="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+                <div
+                    class="hidden md:block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Campeonato</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mandante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Placar</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Visitante</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Detalhes</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Data</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Campeonato</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Estádio</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Mandante</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Placar</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Visitante</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Detalhes</th>
                                 </tr>
                             </thead>
-                            <tbody id="desktop-jogos-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="desktop-jogos-body"
+                                class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Preenchido via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-                
+
                 <!-- Sem resultados -->
-                <div id="no-results-jogos" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
+                <div id="no-results-jogos"
+                    class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
                     <p class="text-lg">Nenhuma partida encontrada para a busca.</p>
                 </div>
             </div>
 
             <!-- ABA 2: ESCALAÇÕES -->
             <div id="content-escalacoes" class="tab-content">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden relative transition-colors">
+                <div
+                    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden relative transition-colors">
                     <div class="overflow-x-auto max-h-[70vh]">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 relative">
                             <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-20">
@@ -302,14 +425,16 @@
                                     <!-- Preenchido via JS -->
                                 </tr>
                             </thead>
-                            <tbody id="escalacoes-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="escalacoes-body"
+                                class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 <!-- Preenchido via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
                 <!-- Sem resultados -->
-                <div id="no-results-escalacoes" class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
+                <div id="no-results-escalacoes"
+                    class="hidden py-12 text-center text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
                     <p class="text-lg">Nenhuma escalação encontrada para a busca.</p>
                 </div>
             </div>
@@ -329,7 +454,7 @@
             darkIcon.classList.remove('hidden');
         }
 
-        themeToggleBtn.addEventListener('click', function() {
+        themeToggleBtn.addEventListener('click', function () {
             darkIcon.classList.toggle('hidden');
             lightIcon.classList.toggle('hidden');
 
@@ -347,7 +472,7 @@
         let currentTab = 'jogos';
         let searchTimeout;
         let activeTags = []; // Array que armazena os termos da busca
-        
+
         const searchInput = document.getElementById('searchInput');
         const tagsContainer = document.getElementById('tags-container');
 
@@ -413,7 +538,7 @@
                 `;
                 tagsContainer.appendChild(tagEl);
             });
-            
+
             if (activeTags.length > 0) {
                 searchInput.placeholder = "Adicionar...";
             } else {
@@ -422,7 +547,7 @@
         }
 
         // Função chamada pelo botão "x" da tag
-        window.removeTag = function(index) {
+        window.removeTag = function (index) {
             activeTags.splice(index, 1);
             updateTagsUI();
             triggerSearchDebounce();
@@ -438,7 +563,7 @@
 
         function changeTab(tabName) {
             currentTab = tabName;
-            
+
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 if (btn.id === `tab-${tabName}`) {
                     btn.className = 'tab-btn active shrink-0 px-4 py-2 font-semibold text-sm rounded-lg bg-palmeiras-dark dark:bg-palmeiras-light text-white shadow-md transition-all';
@@ -472,13 +597,13 @@
                 .then(csvText => {
                     Papa.parse(csvText, {
                         header: true, delimiter: ";", skipEmptyLines: true,
-                        complete: function(results) {
+                        complete: function (results) {
                             allData = preprocessData(results.data);
                             document.getElementById('loading').style.display = 'none';
                             document.getElementById('app-content').classList.remove('hidden');
                             renderData();
                         },
-                        error: function(error) { showError("Erro: " + error.message); }
+                        error: function (error) { showError("Erro: " + error.message); }
                     });
                 })
                 .catch(error => {
@@ -494,16 +619,16 @@
             document.getElementById('upload-section').style.display = 'none';
             document.getElementById('error-message').classList.add('hidden');
             document.getElementById('loading').style.display = 'flex';
-            
+
             Papa.parse(file, {
                 header: true, delimiter: ";", skipEmptyLines: true,
-                complete: function(results) {
+                complete: function (results) {
                     allData = preprocessData(results.data);
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app-content').classList.remove('hidden');
                     renderData();
                 },
-                error: function(error) {
+                error: function (error) {
                     showError("Erro: " + error.message);
                     document.getElementById('upload-section').style.display = 'block';
                 }
@@ -591,7 +716,7 @@
 
             const limitMessage = document.getElementById('limit-message');
             let dataToRender = filteredData;
-            
+
             if (filteredData.length > 150) {
                 dataToRender = filteredData.slice(0, 150);
                 limitMessage.classList.remove('hidden');
@@ -607,20 +732,20 @@
         }
 
         function isPalmeiras(teamName) {
-            if(!teamName) return false;
+            if (!teamName) return false;
             // Removemos acentos e espaços extras para garantir a precisão
             const name = removeAccents(teamName.toLowerCase().trim());
             // Aceita apenas os nomes oficiais da história do clube
-            return name === 'palmeiras' || 
-                   name === 'palestra italia' || 
-                   name === 'palestra de sao paulo';
+            return name === 'palmeiras' ||
+                name === 'palestra italia' ||
+                name === 'palestra de sao paulo';
         }
 
         function renderJogos(data) {
             const desktopBody = document.getElementById('desktop-jogos-body');
             const mobileContainer = document.getElementById('mobile-jogos-container');
             const noResults = document.getElementById('no-results-jogos');
-            
+
             desktopBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
             if (data.length === 0) {
@@ -658,6 +783,7 @@
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">${dataJogo}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${camp}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${est}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-right ${mandanteClass}">${mandante}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white">
@@ -720,20 +846,20 @@
             }
 
             let maxFieldPlayers = 0;
-            
+
             const processedRows = data.map(row => {
                 const jogKeys = Object.keys(row).filter(k => k.toLowerCase().startsWith('jog')).sort((a, b) => (parseInt(a.replace(/\D/g, '')) || 0) - (parseInt(b.replace(/\D/g, '')) || 0));
-                
+
                 const players = [];
                 jogKeys.forEach(k => {
                     const val = row[k] ? row[k].trim() : '';
                     if (val && val !== '-') players.push(val);
                 });
-                
+
                 let tecnico = '-';
-                if (players.length > 0) tecnico = players.pop(); 
+                if (players.length > 0) tecnico = players.pop();
                 maxFieldPlayers = Math.max(maxFieldPlayers, players.length);
-                
+
                 const goleiroKey = Object.keys(row).find(k => k.toLowerCase() === 'goleiro');
                 const goleiroNome = goleiroKey && row[goleiroKey] ? row[goleiroKey].trim() : '-';
 
@@ -744,11 +870,11 @@
                 <th scope="col" class="sticky-col bg-gray-50 dark:bg-gray-900 px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider z-30">Partida (Adversário)</th>
                 <th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Goleiro</th>
             `;
-            
+
             for (let i = 1; i <= maxFieldPlayers; i++) {
                 theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Jogador ${i}</th>`;
             }
-            
+
             theadHTML += `<th scope="col" class="px-4 py-3 text-left text-xs font-bold text-palmeiras-dark dark:text-palmeiras-light uppercase tracking-wider whitespace-nowrap bg-palmeiras-light/10 dark:bg-palmeiras-light/20">Técnico</th>`;
             header.innerHTML = theadHTML;
 
@@ -761,7 +887,7 @@
 
                 const dataJogo = row['Data'] || '';
                 const adversario = isPalmeiras(row['Mandante']) ? row['Visitante'] : row['Mandante'];
-                
+
                 let tdHTML = `
                     <td class="sticky-col bg-white dark:bg-gray-800 px-4 py-3 whitespace-nowrap text-sm font-medium border-r border-gray-200 dark:border-gray-700 transition-colors">
                         <div class="text-xs text-gray-500 dark:text-gray-400">${dataJogo}</div>
@@ -802,4 +928,5 @@
         }
     </script>
 </body>
+
 </html>
